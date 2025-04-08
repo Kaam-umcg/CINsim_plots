@@ -1,0 +1,44 @@
+The following modules were not unloaded:
+  (Use "module --force purge" to unload all):
+
+  1) 2023.01   2) StdEnv
+
+Attaching package: ‘reshape2’
+
+The following object is masked from ‘package:tidyr’:
+
+    smiths
+
+Saving 7 x 7 in image
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 6.61s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 6.98s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 6.8s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 7.43s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 7.03s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 7.29s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 7.06s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 7.35s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 6.71s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 6.79s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 7.77s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 8.49s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 12.98s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 23.08s |==
+==> Starting simulation(s) <==
+==| Simulation(s) complete - final time: 107.46s |==
+==> Starting simulation(s) <==
+slurmstepd: error: *** JOB 16348437 ON node2 CANCELLED AT 2025-04-08T15:37:48 DUE TO TIME LIMIT ***

@@ -7,18 +7,20 @@ library(purrr)
 # sets wd to location of the script - this is dirty, and I do not 
 # recommend it for anyone else following in my footsteps.
 # Only works in Rstudio
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+#setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+setwd(Sys.getenv("TMPDIR"))
+cat(getwd())
 
 if (!dir.exists("plots/figure_2")){
-  dir.create("plots/figure_2")
+  dir.create("plots/figure_2", recursive = TRUE)
 }
 if (!dir.exists("results/T_ALL_params")){
-  dir.create("results/T_ALL_params")
+  dir.create("results/T_ALL_params", recursive = TRUE)
 }
 
 # MAGIC NUMBERS
 # sets variables for the simulations
-ITERATIONS <- 100
+ITERATIONS <- 10
 GENERATIONS <- 100
 
 # plotting theme and scale colours for copy numbers
@@ -186,20 +188,23 @@ for (i in 1:nrow(sim_df)){
   
   # saves the sim results to disk
   sim_name <- paste0("misseg_", round(row$pMisseg, 7),
-                     "_surv_FC_", round(row$survival_FCs, 2))
+                     "_surv_FC_", round(row$survival_FCs, 2), ".Rds")
   saveRDS(sim_list, file.path("results/T_ALL_params", sim_name))
   
   # finally, writes the relevant data to out plotting object
   sim_df[i, ] <- row
 }
 
-# Plotting the heatmap
-ggplot(sim_df, aes(x=))
+# saving the metrics of the simulations for later use (if needed)
+saveRDS(sim_df, file.path("results/sim_df.Rds"))
 
-ggplot(df, aes(x = surf, y = p_test)) +
-  geom_tile(aes(fill = similarity, alpha = vibes), color = "white", width = 0.9, height = 0.9) + 
-  scale_fill_gradient(low = "white", high = "blue", name = "Similarity") +  # Color for similarity
-  scale_alpha_continuous(range = c(0.2, 1), guide = "none") +  # Transparency for vibes
-  labs(x = "Surface", y = "Test", title = "Heatmap of Similarity and Vibes") +
-  theme_minimal() +
+# Plotting the heatmap
+ggplot(sim_df, aes(x = survival_FC, y = )) +
+  geom_title(aes(fill = CnFS, alpha = viability), color = "white", width = 0.9, height = 0.9) + 
+  scale_fill_gradient(low = "white", high = "blue", name = "Similarity") +
+  scale_alpha_continuous(range = c(0.2, 1), guide = "none") +
+  labs(x = "Survival FC", y = "p_misseg", title = "Karyotype similarity") +
+  cinsim_theme +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("plots/figure_2/figure_2b.pdf")
