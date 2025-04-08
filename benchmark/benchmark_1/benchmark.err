@@ -1,0 +1,6 @@
+The following modules were not unloaded:
+  (Use "module --force purge" to unload all):
+
+  1) 2023.01   2) StdEnv
+Error in library(CINsim) : there is no package called ‘CINsim’
+Execution halted
