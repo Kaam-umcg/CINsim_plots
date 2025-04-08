@@ -5,7 +5,7 @@ library(tidyverse)
 # recommend it for anyone else following in my footsteps.
 # Only works in Rstudio
 setwd(dirname(rstudioapi::getSourceEditorContext()$path))
-
+0
 if (!dir.exists("../plots/figure_1")){
   dir.create("../plots/figure_1")
 }
@@ -17,6 +17,10 @@ cinsim_theme <- function() {
           axis.text = element_text(colour = "black"),
           aspect.ratio = 1)
 }
+
+# set the seed for the file, as we do simulations.
+# this makes future reruns reproducible (I think)!
+set.seed(42)
 
 # Figure 1a is created manually using assets created from CINsim
 # Figure 1b is manually created
@@ -66,8 +70,7 @@ growth_df %>%
   facet_wrap(~method) +
   labs(x = "Generation", y = "Population size") +
   cinsim_theme()
-ggsave(file = "../plots/figure_1/figure_1e.pdf")
-
+ggsave(file = "plots/figure_1/figure_1d.pdf")
 
 # Figure 1e can be reproduced using the code below:
 # plot the maximum number of generations before 99.9% of M is reached
@@ -86,4 +89,4 @@ growth_df %>%
   labs(x = "R", y = "Generations", fill = "Method",
        title = "Generations to 99.9% of M") +
   cinsim_theme()
-ggsave(file = "../plots/figure_1/figure_1f.pdf")
+ggsave(file = "plots/figure_1/figure_1e.pdf")
