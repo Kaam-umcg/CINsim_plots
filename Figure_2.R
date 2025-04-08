@@ -160,7 +160,9 @@ for (i in 1:nrow(sim_df)){
   # because some of the survival_FCs are ints we need
   # to cast them to char so that we don't get the wrong value
   idx_surv_FC <- as.character(row$survival_FCs)
-  
+
+  cat("Log: simulating for p_misseg:", row$pMisseg,
+  "\nand survival_FC:", row$survival_FCs)
   # runs the simulations for 1 entry in the heatmap. We only vary
   # the pSurvival, as pMisseg is iterated in the loop.
   sim_list <- parallelCinsim(iterations = ITERATIONS,                   
@@ -182,9 +184,10 @@ for (i in 1:nrow(sim_df)){
   row$viability <- sum(surviving_sims)/ ITERATIONS
   
   # the matching score of the combination of p_misseg and survival_FC is defined
-  # as the mean CnFS (Copy number Frequency Score) over all the sims that are
-  # considered viable
-  row$CnFS <- mean(unlist(lapply(sim_list[surviving_sims], get_CnFS)))
+  # as the mean CnFS (Copy number Frequency Score) over all the viable sims +
+  # 0 for all non-viable sims
+  CnFS <- unlist(lapply(sim_list[surviving_sims], get_CnFS))
+  row$CnFS <- mean(append(CnFS, rep(0, sum(!surviving_sims))))
   
   # saves the sim results to disk
   sim_name <- paste0("misseg_", round(row$pMisseg, 7),

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=Figure_2
-#SBATCH --time=00:05:00
+#SBATCH --time=48:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
