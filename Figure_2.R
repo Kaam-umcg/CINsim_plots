@@ -3,13 +3,12 @@ library(tidyr)
 library(reshape2)
 library(ggplot2)
 library(purrr)
+library(dplyr)
 
 # sets wd to location of the script - this is dirty, and I do not 
 # recommend it for anyone else following in my footsteps.
-# Only works in Rstudio
-#setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+# Since this script runs a lot of simulations, it's made for HPC using slurm.
 setwd(Sys.getenv("TMPDIR"))
-cat(getwd())
 
 if (!dir.exists("plots/figure_2")){
   dir.create("plots/figure_2", recursive = TRUE)
@@ -214,8 +213,15 @@ saveRDS(sim_df, file.path("results/sim_df.Rds"))
 sim_df$survival_FCs <- round(sim_df$survival_FCs, 2)
 sim_df$survival_FCs <- as.factor(sim_df$survival_FCs)
 
+# presets p_misseg with subscript
+p_lab <- bquote(italic(p)[misseg]) 
+
+# gets the location of highest CnFS
+red_star <- sim_df %>%
+  filter(CnFS == max(CnFS)) %>%
+  select(survival_FCs, pMisseg)
+
 # plotting the heatmap of p_misseg, surv_FC, viability and CnFS
-p_lab <- bquote(italic(p)[misseg])
 ggplot(sim_df, aes(x = survival_FCs, y = pMisseg)) +
   geom_tile(aes(fill = CnFS, alpha = viability), color = "white", lwd = 0.2, linetype = 1) +
   scale_fill_gradient(low = "blue", high = "yellow", name = "CnFS") +
@@ -232,13 +238,65 @@ ggplot(sim_df, aes(x = survival_FCs, y = pMisseg)) +
         axis.text.y = element_text(vjust = 1, size = 15),
         axis.title = element_text(size = 15),
         aspect.ratio = 1, panel.grid = element_blank())
-
-# ggsave("~/test_heatmap_plot.pdf")
 ggsave("plots/figure_2/figure_2b.pdf")
 
 # Figure 2c can be recreated by running the code below:
 # We want to plot the final karyotypes of the last generation for one of the simulations
 # at optimal p_misseg and survival_FC.
 # This is effectively the location of the red star in plot 2B, so we can take those
-# survival_FC and p_misseg and use those for indexing into our data
+# survival_FC and p_misseg and use those for loading the relevant simulations
+
+# reconstruct the fn
+fn_optimal_params <- paste0("misseg_", round(red_star$pMisseg, 7),
+                     "_surv_FC_", round(red_star$survival_FCs, 2), ".Rds")
+
+optimal_params_sim <- readRDS(file.path("results/T_ALL_params", fn_optimal_params))
+
+# uses the build-in plot_cn function from CINsim to get our initial plot
+p <- plot_cn(optimal_params_sim) 
+
+# then we do some manual adding of extra elements, mainly styling text
+p + theme(axis.text.x = element_text(hjust = 1, size = 15),
+        axis.text.y = element_text(vjust = 1, size = 15),
+        axis.title = element_text(size = 15), aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5, size = 18),
+        plot.subtitle = element_text(hjust = 0.5, size = 14)) +
+    labs(title = "Copy number frequency", subtitle = "(optimal p_misseg)") +
+    scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
+ggsave("plots/figure_2/figure_2c.pdf", plot = p)
+
+
+# Figure 2d can be recreated by running the code below:
+# we keep randomly sampling simulations untill we find a viable one
+# most simulations will be viable, but need to be sure by checking
+# against the max_g as that is the usual exit we get for good params
+# iters is just so that this code doesn't go infinite if something
+# went horribly wrong earlier in the script, sloppy but it works
+viable_sim <- FALSE
+iters <- 0
+while (!viable_sim & (iters < length(optimal_params_sim))) {
+  print("heyo!")
+  selected_sim <- optimal_params_sim[[sample.int(length(optimal_params_sim), size = 1)]]
+  # checks whether the true cell count exceeded the max cell count at any point
+  # if it was, the simulation was viable
+  if (max(selected_sim$gen_measures$true_cell_count) > as.numeric(selected_sim$sim_info[["max_num_cells"]])) {
+    viable_sim <- FALSE
+  }
+  iters <- iters + 1
+}
+
+p <- cnvHeatmap(selected_sim, subset_size = 1000)
+p + theme(axis.text.x = element_text(hjust = 1, size = 15),
+          axis.title = element_text(size = 15), aspect.ratio = 1,
+          plot.title = element_text(hjust = 0.5, size = 18),
+          plot.subtitle = element_text(hjust = 0.5, size = 14)) +
+  labs(title = "Karyotype landscape", subtitle = "(optimal p_misseg)") +
+  scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
+ggsave("plots/figure_2/figure_2d.pdf", plot = p)
+
+#TODO
+# need to get the metrics for the T-ALL cells in heterogeneity and aneuplody
+# and then rank sum, so needs to be individual statistics for each cell. 
+# not 100% where I can find all of those 
+# Figure 2e can be recreated by running the code below:
 
