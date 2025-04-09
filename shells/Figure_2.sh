@@ -6,9 +6,9 @@
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=10
-#SBATCH --mem-per-cpu=8GB
+#SBATCH --mem-per-cpu=2GB
 #SBATCH --error=errors/Figure_2.err
-#SBATCH --output=outputs/Figure_2.txt
+#SBATCH --output=outputs/Figure_2.log
 
 ######
 # CHANGE THE NAME OF THE JOB TO THE SCRIPT NAME - OTHERWISE A LOT OF THINGS BREAK

@@ -20,7 +20,7 @@ if (!dir.exists("results/T_ALL_params")){
 
 # MAGIC NUMBERS
 # sets variables for the simulations
-ITERATIONS <- 10
+ITERATIONS <- 100
 GENERATIONS <- 100
 
 # plotting theme and scale colours for copy numbers
@@ -58,11 +58,15 @@ ggplot(melt_Mps1, aes(x = Chromosome, y = Fraction,
   geom_bar(stat = "identity", position = "stack") +  # Stacked bars
   scale_y_continuous(breaks = seq(0, 1, 0.2)) +
   scale_fill_manual(values = copy_num_cols) +  # Unique colors for each row
-  labs(x = "Chromosome", y = "Frequency", fill = "Copies") +
+  labs(x = "Chromosome", y = "Frequency", fill = "Copies", title = "382 T-ALL cells",
+    subtitle = "(Mps1DK/DK; p53f/f/; Lck-Cre+)") +
   coord_cartesian(ylim = c(0, 1)) +
-  cinsim_theme()
-ggsave(file = "plots/figure_2/figure_2a.pdf")
+  cinsim_theme() +
+  theme(axis.text.x = element_text(hjust = 1, size = 15),
+        axis.text.y = element_text(vjust = 1, size = 15),
+        axis.title = element_text(size = 15), aspect.ratio = 1)
 
+ggsave(file = "plots/figure_2/figure_2a.pdf")
 
 # Figure 2b can be recreated by running the code below:
 ########### This code is effectively hyperparameter tuning
@@ -147,7 +151,9 @@ sim_df <- data.frame(
   pMisseg = rep(pMissegs, each = length(survival_FC_vals)),
   survival_FCs = rep(survival_FC_vals, times = length(pMissegs)),
   viability = NA, 
-  CnFS = NA)
+  CnFS = NA,
+  viable_sims = NA,
+  non_zero_CnFS = NA)
 
 # I am unsure how foreach works with code that uses snow,
 # so I opt for doing the simulations by row.
@@ -182,11 +188,14 @@ for (i in 1:nrow(sim_df)){
   # of 2*10^9 before 100 generations
   surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x)))
   row$viability <- sum(surviving_sims)/ ITERATIONS
-  
+  row$viable_sims <- sum(surviving_sims)
+
   # the matching score of the combination of p_misseg and survival_FC is defined
   # as the mean CnFS (Copy number Frequency Score) over all the viable sims +
   # 0 for all non-viable sims
   CnFS <- unlist(lapply(sim_list[surviving_sims], get_CnFS))
+  row$non_zero_CnFS <- mean(CnFS)
+
   row$CnFS <- mean(append(CnFS, rep(0, sum(!surviving_sims))))
   
   # saves the sim results to disk
@@ -201,13 +210,35 @@ for (i in 1:nrow(sim_df)){
 # saving the metrics of the simulations for later use (if needed)
 saveRDS(sim_df, file.path("results/sim_df.Rds"))
 
-# Plotting the heatmap
-ggplot(sim_df, aes(x = survival_FC, y = )) +
-  geom_title(aes(fill = CnFS, alpha = viability), color = "white", width = 0.9, height = 0.9) + 
-  scale_fill_gradient(low = "white", high = "blue", name = "Similarity") +
-  scale_alpha_continuous(range = c(0.2, 1), guide = "none") +
-  labs(x = "Survival FC", y = "p_misseg", title = "Karyotype similarity") +
-  cinsim_theme +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# convert some vars to factor for the heatmap
+sim_df$survival_FCs <- round(sim_df$survival_FCs, 2)
+sim_df$survival_FCs <- as.factor(sim_df$survival_FCs)
 
+# plotting the heatmap of p_misseg, surv_FC, viability and CnFS
+p_lab <- bquote(italic(p)[misseg])
+ggplot(sim_df, aes(x = survival_FCs, y = pMisseg)) +
+  geom_tile(aes(fill = CnFS, alpha = viability), color = "white", lwd = 0.2, linetype = 1) +
+  scale_fill_gradient(low = "blue", high = "yellow", name = "CnFS") +
+  scale_alpha_continuous(range = c(0.1, 1), name = "Viability") +
+  scale_y_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)),
+                breaks = 10^(-6:-1)) +
+  scale_x_discrete(name = "Survival FC", breaks = c(10, 5, 3.33, 2.5, 2, 1.67, 1.43, 1.25, 1.11),
+                   limits = unique(sim_df$survival_FCs)) +
+  geom_point(data = red_star, aes(x = survival_FCs, y = pMisseg), color = "red",
+             size = 3, shape = 4) +  
+  labs(x = "Survival FC", y = p_lab, 
+       title = "Karyotype similarity", subtitle = expression("optimal p_misseg")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 15),
+        axis.text.y = element_text(vjust = 1, size = 15),
+        axis.title = element_text(size = 15),
+        aspect.ratio = 1, panel.grid = element_blank())
+
+# ggsave("~/test_heatmap_plot.pdf")
 ggsave("plots/figure_2/figure_2b.pdf")
+
+# Figure 2c can be recreated by running the code below:
+# We want to plot the final karyotypes of the last generation for one of the simulations
+# at optimal p_misseg and survival_FC.
+# This is effectively the location of the red star in plot 2B, so we can take those
+# survival_FC and p_misseg and use those for indexing into our data
+
