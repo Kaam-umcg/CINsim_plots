@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=14
-#SBATCH --time=00:10:00
+#SBATCH --time=04:00:00
 #SBATCH --tasks=1
-#SBATCH --mem=8G
+#SBATCH --mem=4G
 #SBATCH --error=benchmark.err
 #SBATCH --output=benchmark.txt
 module purge
