@@ -28,9 +28,9 @@ do
     echo "#SBATCH --cpus-per-task=$CURRENT_CORES"           >> $FILENAME
     echo "#SBATCH --time=04:00:00"                          >> $FILENAME
     echo "#SBATCH --tasks=1"                                >> $FILENAME
-    echo "#SBATCH --mem=4G"                                 >> $FILENAME
+    echo "#SBATCH --mem=8G"                                 >> $FILENAME
     echo "#SBATCH --error=benchmark.err"                    >> $FILENAME
-    echo "#SBATCH --output=benchmark.txt"                   >> $FILENAME
+    echo "#SBATCH --output=benchmark.log"                   >> $FILENAME
 
     echo "module purge"                                     >> $FILENAME
     echo "module load R/4.4.1-gfbf-2023b"                   >> $FILENAME

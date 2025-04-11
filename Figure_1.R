@@ -3,11 +3,10 @@ library(tidyverse)
 
 # sets wd to location of the script - this is dirty, and I do not 
 # recommend it for anyone else following in my footsteps.
-# Only works in Rstudio
-setwd(dirname(rstudioapi::getSourceEditorContext()$path))
-0
-if (!dir.exists("../plots/figure_1")){
-  dir.create("../plots/figure_1")
+setwd(Sys.getenv("TMPDIR"))
+
+if (!dir.exists("plots/figure_1")){
+  dir.create("plots/figure_1", recursive = TRUE)
 }
 
 # plotting theme

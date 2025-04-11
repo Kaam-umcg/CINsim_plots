@@ -3,9 +3,9 @@
 #SBATCH --cpus-per-task=14
 #SBATCH --time=04:00:00
 #SBATCH --tasks=1
-#SBATCH --mem=4G
+#SBATCH --mem=8G
 #SBATCH --error=benchmark.err
-#SBATCH --output=benchmark.txt
+#SBATCH --output=benchmark.log
 module purge
 module load R/4.4.1-gfbf-2023b
 Rscript ../CINsim_HPC_benchmark.R

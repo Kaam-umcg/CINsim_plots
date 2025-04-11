@@ -13,6 +13,7 @@ setwd(Sys.getenv("TMPDIR"))
 if (!dir.exists("plots/figure_2")){
   dir.create("plots/figure_2", recursive = TRUE)
 }
+
 if (!dir.exists("results/T_ALL_params")){
   dir.create("results/T_ALL_params", recursive = TRUE)
 }
