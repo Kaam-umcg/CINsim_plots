@@ -19,7 +19,7 @@ if (!dir.exists("results/T_ALL_params_div")){
 
 # MAGIC NUMBERS
 # sets variables for the simulations
-ITERATIONS <- 10
+ITERATIONS <- 100
 GENERATIONS <- 250 # because we vary the div_FC we need more generations
 MAX_CELLS <- 10e10
 
@@ -104,8 +104,8 @@ get_CnFS <- function(sim_results) {
 # to determine the slope and intercept for a specific survival FC
 division_FCs <- make_cinsim_coeffcients(selection_metric = Mps1_X,
                                         euploid_copy = 2,
-                                        min_survival_euploid = 0.1, #division_FC = 10
-                                        max_survival_euploid =  0.9, #division_FC = 1.111.. 
+                                        min_survival_euploid = 0.1, #  division_FC = 10
+                                        max_survival_euploid =  0.9, # division_FC = 1.111.. 
                                         max_survival = 1,
                                         interval = 0.8 / 24,         # takes 25 samples
                                         probability_types = c("pDivision"))
@@ -115,6 +115,14 @@ names(division_FCs) <- division_FC_vals
 
 # creates the p_missegs we will iterate over
 pMissegs <- 10^(seq(-6, -1, length.out = 30))
+
+# sets the a and b values for the pSurvival - since we want this to be karyotype
+# independant, we set a = 0 and b > 1000 so that every cell always survives, effectively
+# making this simulation more about clonal expansion than selection
+coeff_struct <- list(NULL, NULL)
+names(coeff_struct) <- c("pDivision", "pSurvival")
+coeff_struct$pSurvival <- c(0, 1000)
+names(coeff_struct$pSurvival) <- c("a", "b")
 
 # we create an object to store the results in and init some NA values
 sim_df <- data.frame(
@@ -139,6 +147,12 @@ for (i in 1:nrow(sim_df)){
 
   cat("Log: simulating for p_misseg:", row$pMisseg,
   "\nand division_FC:", row$division_FCs)
+
+  # collects the pDivision that changed with the consistent pSurvival
+  coeff_struct$pDivision <- division_FCs[[idx_div_FC]]$pDivision
+  coeff_struct$pMisseg <- division_FCs[[idx_div_FC]]$pMisseg
+
+  print(coeff_struct)
   # runs the simulations for 1 entry in the heatmap. We only vary
   # the pDivision, as pMisseg is iterated in the loop.
   sim_list <- parallelCinsim(iterations = ITERATIONS,                   
@@ -150,8 +164,8 @@ for (i in 1:nrow(sim_df)){
                    pMisseg = row$pMisseg,
                    selection_mode = "cn_based",
                    selection_metric = Mps1,
-                   probability_types = c("pDivision"),
-                   coef = division_FCs[[idx_div_FC]],
+                   probability_types = c("pDivision", "pSurvival"),
+                   coef = coeff_struct,
                    fit_division = TRUE,
                    collect_fitness_score = TRUE)
   
@@ -211,4 +225,53 @@ ggplot(sim_df, aes(x = division_FCs, y = pMisseg)) +
         axis.text.y = element_text(vjust = 1, size = 15),
         axis.title = element_text(size = 15),
         aspect.ratio = 1, panel.grid = element_blank())
-ggsave("plots/figure_3/figure_3a.pdf")
+ggsave("plots/figure_3A/figure_3a.pdf")
+
+# we then create all the other relevant plots for this section of Figure 3, specifically 3B & C
+# as they're based on the results of this simulation
+# For figure 3B:
+# reconstruct the fn
+fn_optimal_params <- paste0("misseg_", round(red_star$pMisseg, 7),
+                     "_div_FC_", round(red_star$division_FCs, 2), ".Rds")
+
+optimal_params_sim <- readRDS(file.path("results/T_ALL_params_div", fn_optimal_params))
+
+# uses the build-in plot_cn function from CINsim to get our initial plot
+p <- plot_cn(optimal_params_sim) 
+
+# then we do some manual adding of extra elements, mainly styling text
+p + theme(axis.text.x = element_text(hjust = 1, size = 15),
+        axis.text.y = element_text(vjust = 1, size = 15),
+        axis.title = element_text(size = 15), aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5, size = 18),
+        plot.subtitle = element_text(hjust = 0.5, size = 14)) +
+    labs(title = "Copy number frequency", subtitle = "(optimal Division FC and p_misseg)") +
+    scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
+ggsave("plots/figure_3A/figure_3b1.pdf", plot = p)
+
+# Figure 3C can be recreated by running the code below:
+# we keep randomly sampling simulations untill we find a viable one
+# most simulations will be viable, but need to be sure by checking
+# against the max_g as that is the usual exit we get for good params
+# iters is just so that this code doesn't go infinite if something
+# went horribly wrong earlier in the script, sloppy but it works
+viable_sim <- FALSE
+iters <- 0
+while (!viable_sim & (iters < length(optimal_params_sim))) {
+  selected_sim <- optimal_params_sim[[sample.int(length(optimal_params_sim), size = 1)]]
+  # checks whether the true cell count exceeded the max cell count at any point
+  # if it was, the simulation was viable
+  if (max(selected_sim$gen_measures$true_cell_count) > as.numeric(selected_sim$sim_info[["max_num_cells"]])) {
+    viable_sim <- FALSE
+  }
+  iters <- iters + 1
+}
+
+p <- cnvHeatmap(selected_sim, subset_size = 1000)
+p + theme(axis.text.x = element_text(hjust = 1, size = 15),
+          axis.title = element_text(size = 15), aspect.ratio = 1,
+          plot.title = element_text(hjust = 0.5, size = 18),
+          plot.subtitle = element_text(hjust = 0.5, size = 14)) +
+  labs(title = "Karyotype landscape", subtitle = "(optimal Division FC and p_misseg)") +
+  scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
+ggsave("plots/figure_3A/figure_3b2.pdf", plot = p)

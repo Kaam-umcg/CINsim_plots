@@ -7,21 +7,21 @@ library(dplyr)
 
 # sets wd to location of the script - this is dirty, and I do not 
 # recommend it for anyone else following in my footsteps.
-# Since this script runs a lot of simulations, it's made for HPC using slurm.
 setwd(Sys.getenv("TMPDIR"))
 
-if (!dir.exists("plots/figure_2")){
-  dir.create("plots/figure_2", recursive = TRUE)
+if (!dir.exists("plots/figure_3C")){
+  dir.create("plots/figure_3C", recursive = TRUE)
 }
 
-if (!dir.exists("results/T_ALL_params")){
-  dir.create("results/T_ALL_params", recursive = TRUE)
+if (!dir.exists("results/T_ALL_params_3C")){
+  dir.create("results/T_ALL_params_3C", recursive = TRUE)
 }
 
 # MAGIC NUMBERS
 # sets variables for the simulations
-ITERATIONS <- 100
-GENERATIONS <- 100
+ITERATIONS <- 10
+GENERATIONS <- 250 # because we vary the div_FC we need more generations
+MAX_CELLS <- 10e10
 
 # plotting theme and scale colours for copy numbers
 # copy number colors
@@ -41,45 +41,19 @@ cinsim_theme <- function() {
 # this makes future reruns reproducible!
 set.seed(42)
 
-# Figure 2a can be recreated by running the code below:
-#TODO need to reconstruct this directly from the scWGS data
-# that will require some bash scripting, and maybe coding the wget
-# for the available data as well. Discuss with Floris whether to do that.
-Mps1 <- CINsim::Mps1 # import the observed Mps1 copy number frequencies
-
-# reshapes for ggplotting
-melt_Mps1 <- melt(Mps1)
-colnames(melt_Mps1) <- c("Copy_number", "Chromosome", "Fraction")
-melt_Mps1$Copy_number <- factor(melt_Mps1$Copy_number)
-
-# plots the observed CN states per chromosome in the CINsim style
-ggplot(melt_Mps1, aes(x = Chromosome, y = Fraction, 
-                      fill = factor(Copy_number, levels = rev(levels(Copy_number))))) + # have to reverse the levels
-  geom_bar(stat = "identity", position = "stack") +  # Stacked bars
-  scale_y_continuous(breaks = seq(0, 1, 0.2)) +
-  scale_fill_manual(values = copy_num_cols) +  # Unique colors for each row
-  labs(x = "Chromosome", y = "Frequency", fill = "Copies", title = "382 T-ALL cells",
-    subtitle = "(Mps1DK/DK; p53f/f/; Lck-Cre+)") +
-  coord_cartesian(ylim = c(0, 1)) +
-  cinsim_theme() +
-  theme(axis.text.x = element_text(hjust = 1, size = 15),
-        axis.text.y = element_text(vjust = 1, size = 15),
-        axis.title = element_text(size = 15), aspect.ratio = 1)
-
-ggsave(file = "plots/figure_2/figure_2a.pdf")
-
-# Figure 2b can be recreated by running the code below:
-########### This code is effectively hyperparameter tuning
-# WARNING # Read: it takes very long (80 hours for 10 cores) to run.
-########### I would recommend running this particular script on HPC
-
 # define function for checking viability later
-check_viability <- function(sim_list, sim_number = 1:100, threshold_value = 2e9) {
+check_viability <- function(sim_list, sim_number = 1:100, threshold_value = 10e10, max_g = 250) {
   # Access the last value of the true_cell_count
   last_value <- sim_list[[paste0("sim_", sim_number)]]$gen_measures$true_cell_count[length(sim_list[[paste0("sim_", sim_number)]]$gen_measures$true_cell_count)]
-  
+
   # Check if it's greater than the threshold
-  return(last_value > threshold_value)
+  max_cells_reached <- last_value > threshold_value
+
+  # or if the max amount of generations was reached
+  max_g_reached <- max(sim_list[[paste0("sim_", sim_number)]]$gen_measures$g) == max_g
+
+  # if either were true, return TRUE  
+  return(max_cells_reached | max_g_reached)
 }
 
 # define function to calculate the CnFS, as it's unclear to me 
@@ -89,7 +63,7 @@ get_CnFS <- function(sim_results) {
     message("Incorrect type for given object, needs to be karyoSim")
     return(FALSE)
     }
-  # inits the score to 0, smaller = better
+  # inits the inverse score to 0, smaller = better
   inverse_CnFS <- 0
   
   # gets the observed (target) karyotype frequencies
@@ -129,27 +103,37 @@ get_CnFS <- function(sim_results) {
   return(CnFS)
 }
 
-# first we recreate all the survival_FCs
+# Figure 3C can be reproduced using the code below: 
+
+# first we recreate all the division_FCs
 # because these aren't directly given to CINsim but used as a fit, we need
 # to determine the slope and intercept for a specific survival FC
-survival_FCs <- make_cinsim_coeffcients(selection_metric = Mps1_X,
+division_FCs <- make_cinsim_coeffcients(selection_metric = Mps1_X,
                                         euploid_copy = 2,
-                                        min_survival_euploid = 0.1, #survival_FC = 10
-                                        max_survival_euploid =  0.9, #survival_FC = 1.111.. 
+                                        min_survival_euploid = 0.1, #  division_FC = 10
+                                        max_survival_euploid =  0.9, # division_FC = 1.111.. 
                                         max_survival = 1,
                                         interval = 0.8 / 24,         # takes 25 samples
-                                        probability_types = c("pSurvival"))
-survival_FC_vals = (1 / seq(0.1, 0.9, 0.8 / 24))
+                                        probability_types = c("pDivision"))
+division_FC_vals = (1 / seq(0.1, 0.9, 0.8 / 24))
 # sets the names for easy indexing later
-names(survival_FCs) <- survival_FC_vals
+names(division_FCs) <- division_FC_vals
 
 # creates the p_missegs we will iterate over
 pMissegs <- 10^(seq(-6, -1, length.out = 30))
 
+# sets the a and b values for the pSurvival - since we want this to be karyotype
+# independant, we set a = 0 and b > 1000 so that every cell always survives, effectively
+# making this simulation more about clonal expansion than selection
+coeff_struct <- list(NULL, NULL)
+names(coeff_struct) <- c("pDivision", "pSurvival")
+coeff_struct$pSurvival <- c(0.04049, 0.40410)
+names(coeff_struct$pSurvival) <- c("a", "b")
+
 # we create an object to store the results in and init some NA values
 sim_df <- data.frame(
-  pMisseg = rep(pMissegs, each = length(survival_FC_vals)),
-  survival_FCs = rep(survival_FC_vals, times = length(pMissegs)),
+  pMisseg = rep(pMissegs, each = length(division_FC_vals)),
+  division_FCs = rep(division_FC_vals, times = length(pMissegs)),
   viability = NA, 
   CnFS = NA,
   viable_sims = NA,
@@ -163,34 +147,41 @@ sim_df <- data.frame(
 for (i in 1:nrow(sim_df)){
   row <- sim_df[i,]
 
-  # because some of the survival_FCs are ints we need
+  # because some of the division_FCs are ints we need
   # to cast them to char so that we don't get the wrong value
-  idx_surv_FC <- as.character(row$survival_FCs)
+  idx_div_FC <- as.character(row$division_FCs)
 
   cat("Log: simulating for p_misseg:", row$pMisseg,
-  "\nand survival_FC:", row$survival_FCs)
+  "\nand division_FC:", row$division_FCs)
+
+  # collects the pDivision that changed with the consistent pSurvival
+  coeff_struct$pDivision <- division_FCs[[idx_div_FC]]$pDivision
+  coeff_struct$pMisseg <- division_FCs[[idx_div_FC]]$pMisseg
+
   # runs the simulations for 1 entry in the heatmap. We only vary
-  # the pSurvival, as pMisseg is iterated in the loop.
+  # the pDivision, as pMisseg is iterated in the loop.
   sim_list <- parallelCinsim(iterations = ITERATIONS,                   
                    cores = 10,
                    karyotypes = NULL,
                    euploid_ref = 2,
                    g = GENERATIONS,
+                   max_num_cells = MAX_CELLS,
                    pMisseg = row$pMisseg,
                    selection_mode = "cn_based",
                    selection_metric = Mps1,
-                   probability_types = c("pSurvival"),
-                   coef = survival_FCs[[idx_surv_FC]],
+                   probability_types = c("pDivision", "pSurvival"),
+                   coef = coeff_struct,
+                   fit_division = TRUE,
                    collect_fitness_score = TRUE)
   
-  # viability of the combination of p_misseg and survival_FC is defined
+  # viability of the combination of p_misseg and division_FC is defined
   # as the amount of simulations that get above the max_cells threshold
-  # of 2*10^9 before 100 generations
+  # of 10^10 before 250 generations
   surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x)))
   row$viability <- sum(surviving_sims)/ ITERATIONS
   row$viable_sims <- sum(surviving_sims)
 
-  # the matching score of the combination of p_misseg and survival_FC is defined
+  # the matching score of the combination of p_misseg and division_FC is defined
   # as the mean CnFS (Copy number Frequency Score) over all the viable sims +
   # 0 for all non-viable sims
   CnFS <- unlist(lapply(sim_list[surviving_sims], get_CnFS))
@@ -200,19 +191,19 @@ for (i in 1:nrow(sim_df)){
   
   # saves the sim results to disk
   sim_name <- paste0("misseg_", round(row$pMisseg, 7),
-                     "_surv_FC_", round(row$survival_FCs, 2), ".Rds")
-  saveRDS(sim_list, file.path("results/T_ALL_params", sim_name))
+                     "_div_FC_", round(row$division_FCs, 2), ".Rds")
+  saveRDS(sim_list, file.path("results/T_ALL_params_3C", sim_name))
   
   # finally, writes the relevant data to out plotting object
   sim_df[i, ] <- row
 }
 
 # saving the metrics of the simulations for later use (if needed)
-saveRDS(sim_df, file.path("results/sim_df.Rds"))
+saveRDS(sim_df, file.path("results/sim_div_3C.Rds"))
 
 # convert some vars to factor for the heatmap
-sim_df$survival_FCs <- round(sim_df$survival_FCs, 2)
-sim_df$survival_FCs <- as.factor(sim_df$survival_FCs)
+sim_df$division_FCs <- round(sim_df$division_FCs, 2)
+sim_df$division_FCs <- as.factor(sim_df$division_FCs)
 
 # presets p_misseg with subscript
 p_lab <- bquote(italic(p)[misseg]) 
@@ -220,38 +211,35 @@ p_lab <- bquote(italic(p)[misseg])
 # gets the location of highest CnFS
 red_star <- sim_df %>%
   filter(CnFS == max(CnFS)) %>%
-  select(survival_FCs, pMisseg)
+  select(division_FCs, pMisseg)
 
-# plotting the heatmap of p_misseg, surv_FC, viability and CnFS
-ggplot(sim_df, aes(x = survival_FCs, y = pMisseg)) +
+# plotting the heatmap of p_misseg, div_FC, viability and CnFS
+ggplot(sim_df, aes(x = division_FCs, y = pMisseg)) +
   geom_tile(aes(fill = CnFS, alpha = viability), color = "white", lwd = 0.2, linetype = 1) +
   scale_fill_gradient(low = "blue", high = "yellow", name = "CnFS") +
   scale_alpha_continuous(range = c(0.1, 1), name = "Viability") +
   scale_y_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)),
                 breaks = 10^(-6:-1)) +
-  scale_x_discrete(name = "Survival FC", breaks = c(10, 5, 3.33, 2.5, 2, 1.67, 1.43, 1.25, 1.11),
-                   limits = unique(sim_df$survival_FCs)) +
-  geom_point(data = red_star, aes(x = survival_FCs, y = pMisseg), color = "red",
+  scale_x_discrete(name = "Division FC", breaks = c(10, 5, 3.33, 2.5, 2, 1.67, 1.43, 1.25, 1.11),
+                   limits = unique(sim_df$division_FCs)) +
+  geom_point(data = red_star, aes(x = division_FCs, y = pMisseg), color = "red",
              size = 3, shape = 4) +  
-  labs(x = "Survival FC", y = p_lab, 
+  labs(x = "Division FC", y = p_lab, 
        title = "Karyotype similarity", subtitle = expression("optimal p_misseg")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 15),
         axis.text.y = element_text(vjust = 1, size = 15),
         axis.title = element_text(size = 15),
         aspect.ratio = 1, panel.grid = element_blank())
-ggsave("plots/figure_2/figure_2b.pdf")
+ggsave("plots/figure_3C/figure_3c.pdf")
 
-# Figure 2c can be recreated by running the code below:
-# We want to plot the final karyotypes of the last generation for one of the simulations
-# at optimal p_misseg and survival_FC.
-# This is effectively the location of the red star in plot 2B, so we can take those
-# survival_FC and p_misseg and use those for loading the relevant simulations
-
+# we then create all the other relevant plots for this section of Figure 3, specifically 3D
+# as they're based on the results of this simulation
+# For figure 3D1:
 # reconstruct the fn
-fn_optimal_params <- paste0("misseg_", round(red_star$pMisseg, 7),
-                     "_surv_FC_", round(red_star$survival_FCs, 2), ".Rds")
+fn_optimal_params <- paste0("misseg_", round(as.numeric(red_star$pMisseg, 7)),
+                     "_div_FC_", round(as.numeric(red_star$division_FCs, 2)), ".Rds")
 
-optimal_params_sim <- readRDS(file.path("results/T_ALL_params", fn_optimal_params))
+optimal_params_sim <- readRDS(file.path("results/T_ALL_params_3C", fn_optimal_params))
 
 # uses the build-in plot_cn function from CINsim to get our initial plot
 p <- plot_cn(optimal_params_sim) 
@@ -262,12 +250,11 @@ p + theme(axis.text.x = element_text(hjust = 1, size = 15),
         axis.title = element_text(size = 15), aspect.ratio = 1,
         plot.title = element_text(hjust = 0.5, size = 18),
         plot.subtitle = element_text(hjust = 0.5, size = 14)) +
-    labs(title = "Copy number frequency", subtitle = "(optimal p_misseg)") +
+    labs(title = "Copy number frequency", subtitle = "(optimal Division FC and p_misseg)") +
     scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_2/figure_2c.pdf", plot = p)
+ggsave("plots/figure_3C/figure_3d1.pdf", plot = p)
 
-
-# Figure 2d can be recreated by running the code below:
+# Figure 3C can be recreated by running the code below:
 # we keep randomly sampling simulations untill we find a viable one
 # most simulations will be viable, but need to be sure by checking
 # against the max_g as that is the usual exit we get for good params
@@ -290,13 +277,6 @@ p + theme(axis.text.x = element_text(hjust = 1, size = 15),
           axis.title = element_text(size = 15), aspect.ratio = 1,
           plot.title = element_text(hjust = 0.5, size = 18),
           plot.subtitle = element_text(hjust = 0.5, size = 14)) +
-  labs(title = "Karyotype landscape", subtitle = "(optimal p_misseg)") +
+  labs(title = "Karyotype landscape", subtitle = "(optimal Division FC and p_misseg)") +
   scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_2/figure_2d.pdf", plot = p)
-
-#TODO
-# need to get the metrics for the T-ALL cells in heterogeneity and aneuplody
-# and then rank sum, so needs to be individual statistics for each cell. 
-# not 100% where I can find all of those 
-# Figure 2e can be recreated by running the code below:
-
+ggsave("plots/figure_3C/figure_3d2.pdf", plot = p)

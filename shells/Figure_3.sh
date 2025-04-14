@@ -18,7 +18,7 @@ END_TIME=$(date -d @$SLURM_JOB_END_TIME)
 echo $SLURM_JOB_NAME starting at $START_TIME with prospective end time of $END_TIME
 
 # copy the script to the node
-cp "../Figure_3.R" $TMPDIR 
+cp "../scripts/Figure_3.R" $TMPDIR 
 
 # modules for running scripts
 module purge
