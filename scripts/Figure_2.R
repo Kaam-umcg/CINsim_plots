@@ -20,22 +20,20 @@ if (!dir.exists("results/T_ALL_params")){
 
 # MAGIC NUMBERS
 # sets variables for the simulations
-ITERATIONS <- 100
+ITERATIONS <- 10
 GENERATIONS <- 100
+MAX_CELLS <- 2e9
+
+# source some utils functions for CnFS and viability
+source("scripts/utils/CnFS.R")
+source("scripts/utils/check_viability.R")
+source("scripts/utils/cinsim_theme.R")
 
 # plotting theme and scale colours for copy numbers
 # copy number colors
 copy_num_cols <- c("gray90", "darkorchid3", "springgreen2", "red3", "gold2", "navy",
                    "lemonchiffon", "dodgerblue", "chartreuse4")
 names(copy_num_cols) <- c("0", "1", "2", "3", "4", "5", "6", "7", "8")
-
-# plotting theme
-cinsim_theme <- function() {
-  theme_bw() +
-    theme(panel.grid = element_blank(),
-          axis.text = element_text(colour = "black"),
-          aspect.ratio = 1)
-}
 
 # set the seed for the file, as we do simulations.
 # this makes future reruns reproducible!
@@ -65,74 +63,14 @@ ggplot(melt_Mps1, aes(x = Chromosome, y = Fraction,
   theme(axis.text.x = element_text(hjust = 1, size = 15),
         axis.text.y = element_text(vjust = 1, size = 15),
         axis.title = element_text(size = 15), aspect.ratio = 1)
-
 ggsave(file = "plots/figure_2/figure_2a.pdf")
 
 # Figure 2b can be recreated by running the code below:
-########### This code is effectively hyperparameter tuning
-# WARNING # Read: it takes very long (80 hours for 10 cores) to run.
-########### I would recommend running this particular script on HPC
-
-# define function for checking viability later
-check_viability <- function(sim_list, sim_number = 1:100, threshold_value = 2e9) {
-  # Access the last value of the true_cell_count
-  last_value <- sim_list[[paste0("sim_", sim_number)]]$gen_measures$true_cell_count[length(sim_list[[paste0("sim_", sim_number)]]$gen_measures$true_cell_count)]
-  
-  # Check if it's greater than the threshold
-  return(last_value > threshold_value)
-}
-
-# define function to calculate the CnFS, as it's unclear to me 
-# if the package does this at any point
-get_CnFS <- function(sim_results) {
-    if (!class(sim_results) == "karyoSim"){
-    message("Incorrect type for given object, needs to be karyoSim")
-    return(FALSE)
-    }
-  # inits the score to 0, smaller = better
-  inverse_CnFS <- 0
-  
-  # gets the observed (target) karyotype frequencies
-  karyo_obs <- sim_results$selection_metric
-
-  # and the copy number frequencies of the final generation
-  final_g <- max(sim_results$pop_measures$g)
-  karyo_sim_final <- sim_results$pop_measures[sim_results$pop_measures$g == final_g, ]
-  
-  # calculates the CnFS (Copy number Frequency Score) for the final generation
-  for (chrom in colnames(karyo_obs)){
-    # early exit for X, since we skip that chrom for the CnFS
-    if (chrom == "X"){
-      break
-    }
-
-    # cast to int as we need it for comparisons
-    chrom <- as.integer(chrom)
-    chrom_df <- karyo_sim_final[karyo_sim_final$chromosome == chrom, ]
-    
-    for (cn in rownames(karyo_obs)){
-      freq_obs <- karyo_obs[as.character(cn), as.character(chrom)]
-      
-      # test whether there is a value for cn in chrom_df,
-      # if not we assign it as 0.
-      if (!(as.integer(cn) %in% chrom_df$copy)){
-        freq_sim <- 0
-      }else{
-        freq_sim <- chrom_df[chrom_df$copy == as.integer(cn), ]$cn_freq[[1]][["freq"]]
-      }
-      
-      chrom_cn_CnFS <- (freq_sim - freq_obs)^2
-      inverse_CnFS <- inverse_CnFS + chrom_cn_CnFS
-    }
-  }
-  CnFS <- 1 / inverse_CnFS
-  return(CnFS)
-}
 
 # first we recreate all the survival_FCs
 # because these aren't directly given to CINsim but used as a fit, we need
 # to determine the slope and intercept for a specific survival FC
-survival_FCs <- make_cinsim_coeffcients(selection_metric = Mps1_X,
+survival_FCs <- make_cinsim_coeffcients(selection_metric = Mps1,
                                         euploid_copy = 2,
                                         min_survival_euploid = 0.1, #survival_FC = 10
                                         max_survival_euploid =  0.9, #survival_FC = 1.111.. 
@@ -145,6 +83,11 @@ names(survival_FCs) <- survival_FC_vals
 
 # creates the p_missegs we will iterate over
 pMissegs <- 10^(seq(-6, -1, length.out = 30))
+
+# sets the base CnFS - we keep track of the highest for plotting and loading
+# back some simulation data later
+highest_CnFS <- 0
+best_sim <- "no best sim yet"
 
 # we create an object to store the results in and init some NA values
 sim_df <- data.frame(
@@ -176,6 +119,7 @@ for (i in 1:nrow(sim_df)){
                    karyotypes = NULL,
                    euploid_ref = 2,
                    g = GENERATIONS,
+                   max_num_cells = MAX_CELLS,
                    pMisseg = row$pMisseg,
                    selection_mode = "cn_based",
                    selection_metric = Mps1,
@@ -184,9 +128,9 @@ for (i in 1:nrow(sim_df)){
                    collect_fitness_score = TRUE)
   
   # viability of the combination of p_misseg and survival_FC is defined
-  # as the amount of simulations that get above the max_cells threshold
-  # of 2*10^9 before 100 generations
-  surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x)))
+  # as the amount of simulations that get above the MAX_CELLS threshold or reach GENERATIONS generations
+  surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x, 
+                                                threshold_value = MAX_CELLS, max_g = GENERATIONS)))
   row$viability <- sum(surviving_sims)/ ITERATIONS
   row$viable_sims <- sum(surviving_sims)
 
@@ -203,6 +147,11 @@ for (i in 1:nrow(sim_df)){
                      "_surv_FC_", round(row$survival_FCs, 2), ".Rds")
   saveRDS(sim_list, file.path("results/T_ALL_params", sim_name))
   
+  # updates the best scoring simulation
+  if (row$CnFS > highest_CnFS){
+    highest_CnFS <- row$CnFS
+    best_sim <- sim_name
+  }
   # finally, writes the relevant data to out plotting object
   sim_df[i, ] <- row
 }
@@ -246,12 +195,7 @@ ggsave("plots/figure_2/figure_2b.pdf")
 # at optimal p_misseg and survival_FC.
 # This is effectively the location of the red star in plot 2B, so we can take those
 # survival_FC and p_misseg and use those for loading the relevant simulations
-
-# reconstruct the fn
-fn_optimal_params <- paste0("misseg_", round(red_star$pMisseg, 7),
-                     "_surv_FC_", round(red_star$survival_FCs, 2), ".Rds")
-
-optimal_params_sim <- readRDS(file.path("results/T_ALL_params", fn_optimal_params))
+optimal_params_sim <- readRDS(file.path("results/T_ALL_params", best_sim))
 
 # uses the build-in plot_cn function from CINsim to get our initial plot
 p <- plot_cn(optimal_params_sim) 
@@ -300,3 +244,76 @@ ggsave("plots/figure_2/figure_2d.pdf", plot = p)
 # not 100% where I can find all of those 
 # Figure 2e can be recreated by running the code below:
 
+# function for extracting the aneu/het scores from a karyosim object
+get_karyoscores <- function(karyo_sim){
+  last_g <- max(karyo_sim$gen_measures$g)
+  last_g_measures <- karyo_sim$pop_measures[karyo_sim$pop_measures$g == last_g, ]$measures[[1]]
+  
+  # we need to strip the X chromosome from the calculation
+  last_g_measures <- last_g_measures[last_g_measures$chromosome != "X", ]
+  
+  # returns the relevant values
+  aneu_score <- mean(last_g_measures$aneuploidy)
+  het_score <- mean(last_g_measures$heterogeneity)
+  
+  return(c(aneu_score, het_score))
+}
+
+# gets the het/aneu scores from all optimal param simulations
+pop_scores <- map(optimal_params_sim, get_karyoscores)
+
+# and uses whacky R indexing to get the specific scores per type
+pop_scores <- unlist(pop_scores)
+sim_aneu_scores <- pop_scores[c(TRUE, FALSE)]
+sim_het_scores <- pop_scores[c(FALSE, TRUE)]
+
+# Extract the heterogeneity and aneuploidy scores of the observed, which are stored in the CINsim package
+observed_karyoscores <- CINsim::karyotype_measures
+
+# creates a dataframe to do the ggplotting
+bar_plot_frame <- data.frame(Group = rep(c("Observed", "Simulated"), each = 2),
+                             Score = rep(c("Aneuploidy", "Heterogeneity"), times = 2),
+                             Value = NA, 
+                             Error = NA)
+
+# fills in the dataframe using a ton of conditionals - this is more Python like than R, 
+# but it works I suppose
+for (i in 1:nrow(bar_plot_frame)){
+  row <- bar_plot_frame[i, ]
+  if (row$Group == "Simulated"){
+    if (row$Score == "Aneuploidy"){
+      row$Value <- mean(sim_aneu_scores)
+      row$Error <- sd(sim_aneu_scores) / sqrt(length(sim_aneu_scores))
+    }
+    else {
+      row$Value <- mean(sim_het_scores)
+      row$Error <- sd(sim_het_scores) / sqrt(length(sim_het_scores))
+    }
+  }
+  else {
+    if (row$Score == "Aneuploidy"){
+      row$Value <- mean(observed_karyoscores[observed_karyoscores$parameter == "aneuploidy", ]$score)
+      # how do  I define the error for these? Go across the chromosome specific scores?
+      row$Error <- 0
+    }
+    else {
+      row$Value <- mean(observed_karyoscores[observed_karyoscores$parameter == "heterogeneity", ]$score)
+      row$Error <- 0      
+    }
+  }
+  bar_plot_frame[i, ] <- row
+}
+
+# makes the actual plot
+p <- ggplot(bar_plot_frame, aes(x = Score, y = Value, fill = Group, group = Group)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(
+    aes(ymin = Value - Error, ymax = Value + Error), 
+    position = position_dodge(width = 0.7), 
+    width = 0.25 
+  ) +
+  labs(title = "Karyotype measures",
+       y = "Score") +
+  theme_minimal()
+
+ggsave("plots/figure_2/figure_2e.pdf", plot = p)

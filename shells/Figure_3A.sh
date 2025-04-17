@@ -18,14 +18,14 @@ END_TIME=$(date -d @$SLURM_JOB_END_TIME)
 echo $SLURM_JOB_NAME starting at $START_TIME with prospective end time of $END_TIME
 
 # copy the script to the node
-cp "../scripts/Figure_3A.R" $TMPDIR 
+cp "../scripts/" $TMPDIR -r
 
 # modules for running scripts
 module purge
 module load R/4.4.1-gfbf-2023b
 
 # run your script
-Rscript $TMPDIR/Figure_3A.R
+Rscript $TMPDIR/scripts/Figure_3A.R
 
 # copies all relevant results to SCRATCH
 mkdir -p $SCRATCH/CINsim/Figure_3A

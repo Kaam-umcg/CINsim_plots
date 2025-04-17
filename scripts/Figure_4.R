@@ -9,18 +9,18 @@ library(dplyr)
 # recommend it for anyone else following in my footsteps.
 setwd(Sys.getenv("TMPDIR"))
 
-if (!dir.exists("plots/figure_3C")){
-  dir.create("plots/figure_3C", recursive = TRUE)
+if (!dir.exists("plots/figure_4")){
+  dir.create("plots/figure_4", recursive = TRUE)
 }
 
-if (!dir.exists("results/T_ALL_params_3C")){
-  dir.create("results/T_ALL_params_3C", recursive = TRUE)
+if (!dir.exists("results/T_ALL_params_t302")){
+  dir.create("results/T_ALL_params_t302", recursive = TRUE)
 }
 
 # MAGIC NUMBERS
 # sets variables for the simulations
+GENERATIONS <- 250
 ITERATIONS <- 10
-GENERATIONS <- 250 # because we vary the div_FC we need more generations
 MAX_CELLS <- 10e10
 
 # source some utils functions for CnFS and viability
@@ -38,11 +38,37 @@ names(copy_num_cols) <- c("0", "1", "2", "3", "4", "5", "6", "7", "8")
 # this makes future reruns reproducible!
 set.seed(42)
 
-# Figure 3C can be reproduced using the code below: 
+# figure A is from the scWGS, which we don't have available here so we start from 4B onwards
+# we need to load in the p302 specific chrom frequencies, which are stored in a .RData object
+load("Mps1_t302_p3.RData") # loads in as var t302_p3
+
+t302_p3_melt <- melt(t302_p3)
+t302_p3_melt$Copy_number <- factor(rep(0:9, times = 20))
+colnames(t302_p3_melt) <- c("Chromosome", "Fraction", "Copy_number")
+
+# plots the observed CN states per chromosome in the CINsim style
+p <- ggplot(t302_p3_melt, aes(x = Chromosome, y = Fraction, 
+                      fill = factor(Copy_number, levels = rev(levels(Copy_number))))) + # have to reverse the levels
+  geom_bar(stat = "identity", position = "stack") +  # Stacked bars
+  scale_y_continuous(breaks = seq(0, 1, 0.2)) +
+  scale_fill_manual(values = copy_num_cols) +  # Unique colors for each row
+  scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2)) +
+  labs(x = "Chromosome", y = "Frequency", fill = "Copies", title = "T302 copy number frequencies") +
+  coord_cartesian(ylim = c(0, 1)) +
+  cinsim_theme() +
+  theme(axis.text.x = element_text(hjust = 1, size = 15),
+        axis.text.y = element_text(vjust = 1, size = 15),
+        axis.title = element_text(size = 15), aspect.ratio = 1)
+ggsave("plots/figure_4/figure_4b.pdf", plot = p)
+
+# Moving on to figure 4D:
+# we have to do a similar parameter search to other heatmaps we did earlier
+# but this time with the observerd karyotype being the T302 chrom_freqs
+
 # first we recreate all the division_FCs
 # because these aren't directly given to CINsim but used as a fit, we need
 # to determine the slope and intercept for a specific survival FC
-division_FCs <- make_cinsim_coeffcients(selection_metric = Mps1_X,
+division_FCs <- make_cinsim_coeffcients(selection_metric = t302_p3,
                                         euploid_copy = 2,
                                         min_survival_euploid = 0.1, #  division_FC = 10
                                         max_survival_euploid =  0.9, # division_FC = 1.111.. 
@@ -105,7 +131,7 @@ for (i in 1:nrow(sim_df)){
                    max_num_cells = MAX_CELLS,
                    pMisseg = row$pMisseg,
                    selection_mode = "cn_based",
-                   selection_metric = Mps1,
+                   selection_metric = t302_p3,
                    probability_types = c("pDivision", "pSurvival"),
                    coef = coeff_struct,
                    fit_division = TRUE,
@@ -131,7 +157,7 @@ for (i in 1:nrow(sim_df)){
   # saves the sim results to disk
   sim_name <- paste0("misseg_", round(row$pMisseg, 7),
                      "_div_FC_", round(row$division_FCs, 2), ".Rds")
-  saveRDS(sim_list, file.path("results/T_ALL_params_3C", sim_name))
+  saveRDS(sim_list, file.path("results/T_ALL_params_t302", sim_name))
   
   # updates the best scoring simulation
   if (row$CnFS > highest_CnFS){
@@ -143,7 +169,7 @@ for (i in 1:nrow(sim_df)){
 }
 
 # saving the metrics of the simulations for later use (if needed)
-saveRDS(sim_df, file.path("results/sim_div_3C.Rds"))
+saveRDS(sim_df, file.path("results/sim_div_4D.Rds"))
 
 # convert some vars to factor for the heatmap
 sim_df$division_FCs <- round(sim_df$division_FCs, 2)
@@ -169,17 +195,15 @@ ggplot(sim_df, aes(x = division_FCs, y = pMisseg)) +
   geom_point(data = red_star, aes(x = division_FCs, y = pMisseg), color = "red",
              size = 3, shape = 4) +  
   labs(x = "Division FC", y = p_lab, 
-       title = "Karyotype similarity", subtitle = expression("optimal p_misseg")) +
+       title = "Karyotype similarity", subtitle = ("Survival_FC = 1.11")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 15),
         axis.text.y = element_text(vjust = 1, size = 15),
         axis.title = element_text(size = 15),
         aspect.ratio = 1, panel.grid = element_blank())
-ggsave("plots/figure_3C/figure_3c.pdf")
+ggsave("plots/figure_4/figure_4d.pdf")
 
-# we then create all the other relevant plots for this section of Figure 3, specifically 3D
-# as they're based on the results of this simulation
-# For figure 3D1:
-optimal_params_sim <- readRDS(file.path("results/T_ALL_params_3C", best_sim))
+# Figure 4E
+optimal_params_sim <- readRDS(file.path("results/T_ALL_params_t302", best_sim))
 
 # uses the build-in plot_cn function from CINsim to get our initial plot
 p <- plot_cn(optimal_params_sim) 
@@ -192,9 +216,9 @@ p + theme(axis.text.x = element_text(hjust = 1, size = 15),
         plot.subtitle = element_text(hjust = 0.5, size = 14)) +
     labs(title = "Copy number frequency", subtitle = "(optimal Division FC and p_misseg)") +
     scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_3C/figure_3d1.pdf", plot = p)
+ggsave("plots/figure_4/figure_4e.pdf", plot = p)
 
-# Figure 3C can be recreated by running the code below:
+# Figure 4F
 # we keep randomly sampling simulations untill we find a viable one
 # most simulations will be viable, but need to be sure by checking
 # against the max_g as that is the usual exit we get for good params
@@ -219,4 +243,4 @@ p + theme(axis.text.x = element_text(hjust = 1, size = 15),
           plot.subtitle = element_text(hjust = 0.5, size = 14)) +
   labs(title = "Karyotype landscape", subtitle = "(optimal Division FC and p_misseg)") +
   scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_3C/figure_3d2.pdf", plot = p)
+ggsave("plots/figure_4/figure_4f.pdf", plot = p)

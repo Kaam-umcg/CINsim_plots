@@ -19,9 +19,14 @@ if (!dir.exists("results/T_ALL_params_div")){
 
 # MAGIC NUMBERS
 # sets variables for the simulations
-ITERATIONS <- 100
+ITERATIONS <- 10
 GENERATIONS <- 250 # because we vary the div_FC we need more generations
 MAX_CELLS <- 10e10
+
+# source some utils functions for CnFS and viability
+source("scripts/utils/CnFS.R")
+source("scripts/utils/check_viability.R")
+source("scripts/utils/cinsim_theme.R")
 
 # plotting theme and scale colours for copy numbers
 # copy number colors
@@ -29,80 +34,16 @@ copy_num_cols <- c("gray90", "darkorchid3", "springgreen2", "red3", "gold2", "na
                    "lemonchiffon", "dodgerblue", "chartreuse4")
 names(copy_num_cols) <- c("0", "1", "2", "3", "4", "5", "6", "7", "8")
 
-# plotting theme
-cinsim_theme <- function() {
-  theme_bw() +
-    theme(panel.grid = element_blank(),
-          axis.text = element_text(colour = "black"),
-          aspect.ratio = 1)
-}
-
 # set the seed for the file, as we do simulations.
 # this makes future reruns reproducible!
 set.seed(42)
-
-# define function for checking viability later
-check_viability <- function(sim_list, sim_number = 1:100, threshold_value = 10e10) {
-  # Access the last value of the true_cell_count
-  last_value <- sim_list[[paste0("sim_", sim_number)]]$gen_measures$true_cell_count[length(sim_list[[paste0("sim_", sim_number)]]$gen_measures$true_cell_count)]
-  
-  # Check if it's greater than the threshold
-  return(last_value > threshold_value)
-}
-
-# define function to calculate the CnFS, as it's unclear to me 
-# if the package does this at any point
-get_CnFS <- function(sim_results) {
-    if (!class(sim_results) == "karyoSim"){
-    message("Incorrect type for given object, needs to be karyoSim")
-    return(FALSE)
-    }
-  # inits the inverse score to 0, smaller = better
-  inverse_CnFS <- 0
-  
-  # gets the observed (target) karyotype frequencies
-  karyo_obs <- sim_results$selection_metric
-
-  # and the copy number frequencies of the final generation
-  final_g <- max(sim_results$pop_measures$g)
-  karyo_sim_final <- sim_results$pop_measures[sim_results$pop_measures$g == final_g, ]
-  
-  # calculates the CnFS (Copy number Frequency Score) for the final generation
-  for (chrom in colnames(karyo_obs)){
-    # early exit for X, since we skip that chrom for the CnFS
-    if (chrom == "X"){
-      break
-    }
-
-    # cast to int as we need it for comparisons
-    chrom <- as.integer(chrom)
-    chrom_df <- karyo_sim_final[karyo_sim_final$chromosome == chrom, ]
-    
-    for (cn in rownames(karyo_obs)){
-      freq_obs <- karyo_obs[as.character(cn), as.character(chrom)]
-      
-      # test whether there is a value for cn in chrom_df,
-      # if not we assign it as 0.
-      if (!(as.integer(cn) %in% chrom_df$copy)){
-        freq_sim <- 0
-      }else{
-        freq_sim <- chrom_df[chrom_df$copy == as.integer(cn), ]$cn_freq[[1]][["freq"]]
-      }
-      
-      chrom_cn_CnFS <- (freq_sim - freq_obs)^2
-      inverse_CnFS <- inverse_CnFS + chrom_cn_CnFS
-    }
-  }
-  CnFS <- 1 / inverse_CnFS
-  return(CnFS)
-}
 
 # Figure 3A can be reproduced using the code below: 
 
 # first we recreate all the division_FCs
 # because these aren't directly given to CINsim but used as a fit, we need
 # to determine the slope and intercept for a specific survival FC
-division_FCs <- make_cinsim_coeffcients(selection_metric = Mps1_X,
+division_FCs <- make_cinsim_coeffcients(selection_metric = Mps1,
                                         euploid_copy = 2,
                                         min_survival_euploid = 0.1, #  division_FC = 10
                                         max_survival_euploid =  0.9, # division_FC = 1.111.. 
@@ -115,6 +56,11 @@ names(division_FCs) <- division_FC_vals
 
 # creates the p_missegs we will iterate over
 pMissegs <- 10^(seq(-6, -1, length.out = 30))
+
+# sets the base CnFS - we keep track of the highest for plotting and loading
+# back some simulation data later
+highest_CnFS <- 0
+best_sim <- "no best sim yet"
 
 # sets the a and b values for the pSurvival - since we want this to be karyotype
 # independant, we set a = 0 and b > 1000 so that every cell always survives, effectively
@@ -152,7 +98,6 @@ for (i in 1:nrow(sim_df)){
   coeff_struct$pDivision <- division_FCs[[idx_div_FC]]$pDivision
   coeff_struct$pMisseg <- division_FCs[[idx_div_FC]]$pMisseg
 
-  print(coeff_struct)
   # runs the simulations for 1 entry in the heatmap. We only vary
   # the pDivision, as pMisseg is iterated in the loop.
   sim_list <- parallelCinsim(iterations = ITERATIONS,                   
@@ -167,12 +112,15 @@ for (i in 1:nrow(sim_df)){
                    probability_types = c("pDivision", "pSurvival"),
                    coef = coeff_struct,
                    fit_division = TRUE,
-                   collect_fitness_score = TRUE)
+                   collect_fitness_score = TRUE,
+                   pDivision = 0) # funny quirk in the CINsim code, but pDivision needs to be 0
+                                  # otherwise there will be no division at all.
   
   # viability of the combination of p_misseg and division_FC is defined
   # as the amount of simulations that get above the max_cells threshold
   # of 10^10 before 250 generations
-  surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x)))
+  surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x, 
+                                                threshold_value = MAX_CELLS, max_g = GENERATIONS)))
   row$viability <- sum(surviving_sims)/ ITERATIONS
   row$viable_sims <- sum(surviving_sims)
 
@@ -189,6 +137,11 @@ for (i in 1:nrow(sim_df)){
                      "_div_FC_", round(row$division_FCs, 2), ".Rds")
   saveRDS(sim_list, file.path("results/T_ALL_params_div", sim_name))
   
+  # updates the best scoring simulation
+  if (row$CnFS > highest_CnFS){
+    highest_CnFS <- row$CnFS
+    best_sim <- sim_name
+  }
   # finally, writes the relevant data to out plotting object
   sim_df[i, ] <- row
 }
@@ -230,11 +183,7 @@ ggsave("plots/figure_3A/figure_3a.pdf")
 # we then create all the other relevant plots for this section of Figure 3, specifically 3B & C
 # as they're based on the results of this simulation
 # For figure 3B:
-# reconstruct the fn
-fn_optimal_params <- paste0("misseg_", round(red_star$pMisseg, 7),
-                     "_div_FC_", round(red_star$division_FCs, 2), ".Rds")
-
-optimal_params_sim <- readRDS(file.path("results/T_ALL_params_div", fn_optimal_params))
+optimal_params_sim <- readRDS(file.path("results/T_ALL_params_div", best_sim))
 
 # uses the build-in plot_cn function from CINsim to get our initial plot
 p <- plot_cn(optimal_params_sim) 

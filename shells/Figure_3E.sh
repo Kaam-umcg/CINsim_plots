@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#SBATCH --job-name=Figure_3C
-#SBATCH --time=24:00:00
+#SBATCH --job-name=Figure_3E
+#SBATCH --time=01:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=10
-#SBATCH --mem-per-cpu=2GB
-#SBATCH --error=errors/Figure_3C.err
-#SBATCH --output=outputs/Figure_3C.log
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=8GB
+#SBATCH --error=errors/Figure_3E.err
+#SBATCH --output=outputs/Figure_3E.log
 
 ######
 # CHANGE THE NAME OF THE JOB TO THE SCRIPT NAME - OTHERWISE A LOT OF THINGS BREAK
@@ -25,8 +25,8 @@ module purge
 module load R/4.4.1-gfbf-2023b
 
 # run your script
-Rscript $TMPDIR/scripts/Figure_3C.R
+Rscript $TMPDIR/scripts/Figure_3E.R
 
 # copies all relevant results to SCRATCH
-mkdir -p $SCRATCH/CINsim/Figure_3C
-cp $TMPDIR $SCRATCH/CINsim/Figure_3C -r
+mkdir -p $SCRATCH/CINsim/Figure_3E
+cp $TMPDIR $SCRATCH/CINsim/Figure_3E -r
