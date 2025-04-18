@@ -20,7 +20,7 @@ if (!dir.exists("results/T_ALL_params")){
 
 # MAGIC NUMBERS
 # sets variables for the simulations
-ITERATIONS <- 10
+ITERATIONS <- 100
 GENERATIONS <- 100
 MAX_CELLS <- 2e9
 
@@ -197,6 +197,9 @@ ggsave("plots/figure_2/figure_2b.pdf")
 # survival_FC and p_misseg and use those for loading the relevant simulations
 optimal_params_sim <- readRDS(file.path("results/T_ALL_params", best_sim))
 
+# TODO: hardcoded filepath for saving the best sim for Fig 3E
+saveRDS(optimal_params_sim, "/scratch/p319788/CINsim/best_sims/survival.Rds")
+
 # uses the build-in plot_cn function from CINsim to get our initial plot
 p <- plot_cn(optimal_params_sim) 
 
@@ -209,7 +212,6 @@ p + theme(axis.text.x = element_text(hjust = 1, size = 15),
     labs(title = "Copy number frequency", subtitle = "(optimal p_misseg)") +
     scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
 ggsave("plots/figure_2/figure_2c.pdf", plot = p)
-
 
 # Figure 2d can be recreated by running the code below:
 # we keep randomly sampling simulations untill we find a viable one
@@ -224,7 +226,7 @@ while (!viable_sim & (iters < length(optimal_params_sim))) {
   # checks whether the true cell count exceeded the max cell count at any point
   # if it was, the simulation was viable
   if (max(selected_sim$gen_measures$true_cell_count) > as.numeric(selected_sim$sim_info[["max_num_cells"]])) {
-    viable_sim <- FALSE
+    viable_sim <- TRUE
   }
   iters <- iters + 1
 }
@@ -238,12 +240,8 @@ p + theme(axis.text.x = element_text(hjust = 1, size = 15),
   scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
 ggsave("plots/figure_2/figure_2d.pdf", plot = p)
 
-#TODO
-# need to get the metrics for the T-ALL cells in heterogeneity and aneuplody
-# and then rank sum, so needs to be individual statistics for each cell. 
-# not 100% where I can find all of those 
-# Figure 2e can be recreated by running the code below:
 
+# Figure 2e can be recreated by running the code below:
 # function for extracting the aneu/het scores from a karyosim object
 get_karyoscores <- function(karyo_sim){
   last_g <- max(karyo_sim$gen_measures$g)
@@ -293,12 +291,12 @@ for (i in 1:nrow(bar_plot_frame)){
   else {
     if (row$Score == "Aneuploidy"){
       row$Value <- mean(observed_karyoscores[observed_karyoscores$parameter == "aneuploidy", ]$score)
-      # how do  I define the error for these? Go across the chromosome specific scores?
-      row$Error <- 0
+      # we get the error by getting the error per chromosome - this doesn't feel like the right metric!
+      row$Error <- sd(observed_karyoscores[observed_karyoscores$parameter == "aneuploidy", ]$score) / sqrt(length(observed_karyoscores[observed_karyoscores$parameter == "aneuploidy", ]$score))
     }
     else {
       row$Value <- mean(observed_karyoscores[observed_karyoscores$parameter == "heterogeneity", ]$score)
-      row$Error <- 0      
+      row$Error <- sd(observed_karyoscores[observed_karyoscores$parameter == "heterogeneity", ]$score) /sqrt(length(observed_karyoscores[observed_karyoscores$parameter == "heterogeneity", ]$score))     
     }
   }
   bar_plot_frame[i, ] <- row
@@ -315,5 +313,4 @@ p <- ggplot(bar_plot_frame, aes(x = Score, y = Value, fill = Group, group = Grou
   labs(title = "Karyotype measures",
        y = "Score") +
   theme_minimal()
-
 ggsave("plots/figure_2/figure_2e.pdf", plot = p)

@@ -7,7 +7,11 @@ sbatch Figure_1.sh
 sbatch Figure_2.sh
 sbatch Figure_3A.sh
 sbatch Figure_3C.sh
-sbatch Figure_3E.sh
+
+# since 3E needs results from all the other scripts before, 
+# we can't realistically run it parallel with the other scripts
+# sbatch Figure_3E.sh 
+
 sbatch Figure_4.sh
 sbatch Figure_5.sh
 

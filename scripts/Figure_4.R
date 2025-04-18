@@ -20,7 +20,7 @@ if (!dir.exists("results/T_ALL_params_t302")){
 # MAGIC NUMBERS
 # sets variables for the simulations
 GENERATIONS <- 250
-ITERATIONS <- 10
+ITERATIONS <- 100
 MAX_CELLS <- 10e10
 
 # source some utils functions for CnFS and viability
@@ -231,7 +231,7 @@ while (!viable_sim & (iters < length(optimal_params_sim))) {
   # checks whether the true cell count exceeded the max cell count at any point
   # if it was, the simulation was viable
   if (max(selected_sim$gen_measures$true_cell_count) > as.numeric(selected_sim$sim_info[["max_num_cells"]])) {
-    viable_sim <- FALSE
+    viable_sim <- TRUE
   }
   iters <- iters + 1
 }

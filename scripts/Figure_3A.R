@@ -19,7 +19,7 @@ if (!dir.exists("results/T_ALL_params_div")){
 
 # MAGIC NUMBERS
 # sets variables for the simulations
-ITERATIONS <- 10
+ITERATIONS <- 100
 GENERATIONS <- 250 # because we vary the div_FC we need more generations
 MAX_CELLS <- 10e10
 
@@ -184,6 +184,7 @@ ggsave("plots/figure_3A/figure_3a.pdf")
 # as they're based on the results of this simulation
 # For figure 3B:
 optimal_params_sim <- readRDS(file.path("results/T_ALL_params_div", best_sim))
+saveRDS(optimal_params_sim, "/scratch/p319788/CINsim/best_sims/division.Rds")
 
 # uses the build-in plot_cn function from CINsim to get our initial plot
 p <- plot_cn(optimal_params_sim) 
@@ -211,7 +212,7 @@ while (!viable_sim & (iters < length(optimal_params_sim))) {
   # checks whether the true cell count exceeded the max cell count at any point
   # if it was, the simulation was viable
   if (max(selected_sim$gen_measures$true_cell_count) > as.numeric(selected_sim$sim_info[["max_num_cells"]])) {
-    viable_sim <- FALSE
+    viable_sim <- TRUE
   }
   iters <- iters + 1
 }
