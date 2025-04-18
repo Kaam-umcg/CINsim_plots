@@ -18,14 +18,14 @@ END_TIME=$(date -d @$SLURM_JOB_END_TIME)
 echo $SLURM_JOB_NAME starting at $START_TIME with prospective end time of $END_TIME
 
 # copy the script to the node
-cp "collect_benchmark.R" $TMPDIR 
+cp "plot_benchmark.R" $TMPDIR 
 
 # modules for running scripts
 module purge
 module load R/4.4.1-gfbf-2023b
 
 # run your script
-Rscript $TMPDIR/collect_benchmark.R
+Rscript $TMPDIR/plot_benchmark.R
 
 # copies all relevant results to SCRATCH
 mkdir -p $SCRATCH/CINsim/benchmark

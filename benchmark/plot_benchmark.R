@@ -44,7 +44,7 @@ for(var in benchmark_vars){
     geom_point() +
     geom_errorbar(aes(ymin = mean_time - se_time, ymax = mean_time + se_time), width = 0.2) +
     labs(
-      x = "Iterations",
+      x = var,
       y = "Mean Time Taken",
       color = "Cores",
       title = "Simulation Time by Iterations and Number of Cores"
