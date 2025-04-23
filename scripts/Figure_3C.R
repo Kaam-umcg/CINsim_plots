@@ -116,7 +116,7 @@ for (i in 1:nrow(sim_df)){
   # viability of the combination of p_misseg and division_FC is defined
   # as the amount of simulations that get above the max_cells threshold
   # of 10^10 before 250 generations
-  surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x)))
+  surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x, threshold_value = MAX_CELLS, max_g = GENERATIONS)))
   row$viability <- sum(surviving_sims)/ ITERATIONS
   row$viable_sims <- sum(surviving_sims)
 

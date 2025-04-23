@@ -84,7 +84,7 @@ growth_df %>%
   geom_bar(aes(group = method, fill = method),
            col = "grey", stat = "identity", position = "dodge") +
   geom_text(aes(group = method, label = g), 
-            position=position_dodge(width=0.9), vjust=-0.25) +
+            position = position_dodge(width=0.9), vjust=-0.25) +
   labs(x = "R", y = "Generations", fill = "Method",
        title = "Generations to 99.9% of M") +
   cinsim_theme()

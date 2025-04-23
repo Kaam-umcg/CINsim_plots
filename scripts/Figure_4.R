@@ -56,8 +56,8 @@ p <- ggplot(t302_p3_melt, aes(x = Chromosome, y = Fraction,
   labs(x = "Chromosome", y = "Frequency", fill = "Copies", title = "T302 copy number frequencies") +
   coord_cartesian(ylim = c(0, 1)) +
   cinsim_theme() +
-  theme(axis.text.x = element_text(hjust = 1, size = 15),
-        axis.text.y = element_text(vjust = 1, size = 15),
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
         axis.title = element_text(size = 15), aspect.ratio = 1)
 ggsave("plots/figure_4/figure_4b.pdf", plot = p)
 
@@ -142,7 +142,7 @@ for (i in 1:nrow(sim_df)){
   # viability of the combination of p_misseg and division_FC is defined
   # as the amount of simulations that get above the max_cells threshold
   # of 10^10 before 250 generations
-  surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x)))
+  surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x, threshold_value = MAX_CELLS, max_g = GENERATIONS)))
   row$viability <- sum(surviving_sims)/ ITERATIONS
   row$viable_sims <- sum(surviving_sims)
 

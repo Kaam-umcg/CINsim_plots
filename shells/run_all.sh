@@ -13,6 +13,12 @@ sbatch Figure_3C.sh
 # sbatch Figure_3E.sh 
 
 sbatch Figure_4.sh
-sbatch Figure_5.sh
+
+# fig 5 needs a lot of hyperparam searching, so we sbatch it as such
+sbatch Figure_5_14T.sh
+sbatch Figure_5_16T.sh
+sbatch Figure_5_9T.sh
+sbatch Figure_5_24TB.sh
+
 
 # and all the scripts for the supplemental figures

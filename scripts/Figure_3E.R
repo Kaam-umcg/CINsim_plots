@@ -44,10 +44,12 @@ for (condition in names(best_sims)){
   row <- plot_df[plot_df$sim_type == condition , ]
   sims <- best_sims[condition]
 
-  #TODO
-  MAX_CELLS <- 
-  GENERATIONS <- 
+  # need to unpack the generation and CnFS for every sim in the list
+  
 
+  # gets generation and cell cap metrics
+  MAX_CELLS <- as.numeric(sims[[1]]$sim_info["max_num_cells"])
+  GENERATIONS <- as.numeric(sims[[1]]$sim_info["g"])
 
   surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sims, .x, 
                                               threshold_value = MAX_CELLS, max_g = GENERATIONS)))

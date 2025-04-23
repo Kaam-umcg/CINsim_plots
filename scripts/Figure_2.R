@@ -57,12 +57,14 @@ ggplot(melt_Mps1, aes(x = Chromosome, y = Fraction,
   scale_y_continuous(breaks = seq(0, 1, 0.2)) +
   scale_fill_manual(values = copy_num_cols) +  # Unique colors for each row
   labs(x = "Chromosome", y = "Frequency", fill = "Copies", title = "382 T-ALL cells",
-    subtitle = "(Mps1DK/DK; p53f/f/; Lck-Cre+)") +
+    subtitle = "(Mps1DK/DK; p53f/f; Lck-Cre+)") +
   coord_cartesian(ylim = c(0, 1)) +
   cinsim_theme() +
-  theme(axis.text.x = element_text(hjust = 1, size = 15),
-        axis.text.y = element_text(vjust = 1, size = 15),
-        axis.title = element_text(size = 15), aspect.ratio = 1)
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title = element_text(size = 15), aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
 ggsave(file = "plots/figure_2/figure_2a.pdf")
 
 # Figure 2b can be recreated by running the code below:
@@ -185,9 +187,11 @@ ggplot(sim_df, aes(x = survival_FCs, y = pMisseg)) +
   labs(x = "Survival FC", y = p_lab, 
        title = "Karyotype similarity", subtitle = expression("optimal p_misseg")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 15),
-        axis.text.y = element_text(vjust = 1, size = 15),
+        axis.text.y = element_text(size = 15),
         axis.title = element_text(size = 15),
-        aspect.ratio = 1, panel.grid = element_blank())
+        aspect.ratio = 1, panel.grid = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
 ggsave("plots/figure_2/figure_2b.pdf")
 
 # Figure 2c can be recreated by running the code below:

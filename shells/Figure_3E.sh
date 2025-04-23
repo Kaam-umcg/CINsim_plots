@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=Figure_3E
+#SBATCH --job-name=Fig_3E
 #SBATCH --time=01:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
