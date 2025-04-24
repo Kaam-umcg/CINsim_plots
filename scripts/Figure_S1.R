@@ -207,7 +207,89 @@ ggsave(file = "plots/figure_S1/figure_s1d.pdf")
 # Figure S1e is handmade, so we skip it here
 
 # Figure S1f 
+# reconstruct a most-fit karyotype based on Mps1 data
+best_karyo <- as.integer(apply(Mps1, 2, function(x) rownames(Mps1)[which.max(x)]))
+best_karyo <- matrix(best_karyo, nrow = 1)
+colnames(best_karyo) <- 1:20
+colnames(best_karyo)[20] <- "X"
+rownames(best_karyo) <- "cell_1"
 
+# generate a million random karyotypes, append the optimal and euploid karyotypes
+num_karyotypes <- 1e+06
+karyotypes <- rbind(makeKaryotypes(num_karyotypes, random = TRUE),
+                    matrix(sample(1:8, 20*num_karyotypes, replace = TRUE), 
+                           ncol = 20, nrow = num_karyotypes),
+                    makeKaryotypes(1),
+                    best_karyo)
+rownames(karyotypes) <- paste(c(rep("Aneuploid-semirandom", num_karyotypes),
+                                rep("Aneuploid-random", num_karyotypes),
+                                "Euploid", "Optimal"), 
+                              1:(num_karyotypes + 2), sep = "_")
 
+# calculate the karyotype scores
+# triple colon (:::) calls the internal variable in the package - the manual says to contact the maintainer
+# if you're doing this as it's probably a mistake. I, as the maintainer, say the maintainer is stupid so go ahead
+scores <- bind_rows(tibble(method = "cn_based",
+                           cell = rownames(karyotypes),
+                           score = CINsim:::get_score(karyotypes,
+                                             selection_mode = "cn_based",
+                                             selection_metric = Mps1_X)),
+                    tibble(method = "rel_copy",
+                           cell = rownames(karyotypes),
+                           score = CINsim:::get_score(karyotypes,
+                                             selection_mode = "rel_copy",
+                                             selection_metric = Mps1_rel_copy))) %>%
+  separate(cell, into = c("group", "id"), sep = "_", remove = TRUE) %>%
+  mutate(group = factor(group, levels = c("Euploid", "Aneuploid-random", "Aneuploid-semirandom", "Optimal")))
+
+# get the euploid and optimal scores
+scores_opt <- scores %>%
+  filter(group %in% c("Euploid", "Optimal"),
+         method == "cn_based")
+
+# plot the distribution of scores, highlighting the euploid and maximum score
+p1 <- scores %>%
+  filter(group %in% c("Aneuploid-random", "Aneuploid-semirandom"),
+         method == "cn_based") %>%
+  ggplot(aes(x = score)) +
+  geom_density(aes(group = group, fill = group), col = "grey", alpha = 0.5) +
+  geom_hline(yintercept = 0, col = "black") +
+  geom_vline(data = scores_opt, aes(group = group, col = group, xintercept = score),
+             linewidth = 1) +
+  scale_color_manual(values = c("darkgreen", "darkred")) +
+  labs(x = "Score", y = "Density", fill = "Karyotypes",
+       col = "Reference") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        axis.text = element_text(colour = "black"),
+        aspect.ratio = 1)
+
+# score to probability through linear fit
+score2prob_lm <- function(x, a, b) {(a*x + b)}
+
+# generate a series of values between the euploid probability and the maximum
+sur_0.5 <- seq(0.5, 1, length.out = 1000)
+sur_0.9 <- seq(0.9, 1, length.out = 1000)
+scores2fit <- seq(min(scores_opt$score), max(scores_opt$score), length.out = 1000)
+
+# make a fit for 0.5 and 0.9 euploid survival
+score_tibble <- tibble(scores = scores2fit,
+                       sur_0.5 = sur_0.5,
+                       sur_0.9 = sur_0.9)
+
+# make the fit and get coefficients
+fit_0.5 <- lm(sur_0.5 ~ scores2fit)
+fit_0.9 <- lm(sur_0.9 ~ scores2fit)
+coef_tibble <- rbind(coef(fit_0.5), coef(fit_0.9)) %>% as.data.frame()
+colnames(coef_tibble) <- c("b", "a")
+coef_tibble$euploid_sur <- c(0.5, 0.9)
+
+# add the psurvival lines to the plot, making a secondary axis
+# divide coeffcients by three to fit in in the frame
+p1 <- p1 + 
+  geom_abline(slope = coef_tibble$a[1]/3, intercept = coef_tibble$b[1]/3, col = "orange", size = 1) +
+  geom_abline(slope = coef_tibble$a[2]/3, intercept = coef_tibble$b[2]/3, col = "red", size = 1) +
+  scale_y_continuous(sec.axis = sec_axis(transform = ~ .*3, name = "pSurvival", breaks = seq(0, 1, 0.25)))
+ggsave(file = "plots/figure_S1/figure_s1d.pdf", plot = p1)  
 
 # Figure S1g is handmade, so we skip it here

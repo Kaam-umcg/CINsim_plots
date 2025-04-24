@@ -17,6 +17,8 @@ if (!dir.exists("results/T_ALL_params_div")){
   dir.create("results/T_ALL_params_div", recursive = TRUE)
 }
 
+cores_avail <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK"))
+
 # MAGIC NUMBERS
 # sets variables for the simulations
 ITERATIONS <- 100
@@ -101,7 +103,7 @@ for (i in 1:nrow(sim_df)){
   # runs the simulations for 1 entry in the heatmap. We only vary
   # the pDivision, as pMisseg is iterated in the loop.
   sim_list <- parallelCinsim(iterations = ITERATIONS,                   
-                   cores = 10,
+                   cores = cores_avail,
                    karyotypes = NULL,
                    euploid_ref = 2,
                    g = GENERATIONS,
@@ -109,7 +111,6 @@ for (i in 1:nrow(sim_df)){
                    pMisseg = row$pMisseg,
                    selection_mode = "cn_based",
                    selection_metric = Mps1,
-                   probability_types = c("pDivision", "pSurvival"),
                    coef = coeff_struct,
                    fit_division = TRUE,
                    collect_fitness_score = TRUE,

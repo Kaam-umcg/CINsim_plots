@@ -1,12 +1,12 @@
 #!/bin/bash
 
 #SBATCH --job-name=Fig_3C
-#SBATCH --time=10-00:00
+#SBATCH --time=5-00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=10
-#SBATCH --mem-per-cpu=2GB
+#SBATCH --cpus-per-task=20
+#SBATCH --mem-per-cpu=4GB
 #SBATCH --error=errors/Figure_3C.err
 #SBATCH --output=outputs/Figure_3C.log
 

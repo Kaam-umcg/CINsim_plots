@@ -70,11 +70,15 @@ for (organoid_name in names(organoid_cns)){
     # for this specific organoid
     sim_data_frame <- data.frame(
     CnFS = NA,
+    zeroed_CNFS = NA, 
     viability = NA,
     p_misseg = rep(p_missegs, each = length(division_FC_vals) * length(survival_FC_vals)),
     division_FC = rep(division_FC_vals, times = length(survival_FC_vals)), 
     survival_FC = rep(survival_FC_vals, each = length(division_FC_vals)),
     sim_type = sim_type)
+
+    cat("\nLog: need to do a total of", dim(sim_data_frame)[1], "simulation for organoid", 
+          organoid_name, "for condition", sim_type)
 
     # does every simulation 1 by 1, doing 6 repeats of each sim
     for (i in 1:nrow(sim_data_frame)){
@@ -106,8 +110,11 @@ for (organoid_name in names(organoid_cns)){
                                                                     threshold_value = MAX_CELLS, 
                                                                     max_g = GENERATIONS)))
         row$viability <- sum(surviving_sims)/ ITERATIONS
+
+        # gets both the CnFS of all viable sims and the score is non_surviving sims are assigned 0
         CnFS <- unlist(lapply(sim_list[surviving_sims], get_CnFS))
-        row$CnFS <- mean(append(CnFS, rep(0, sum(!surviving_sims))))
+        row$CnFS <- mean(CnFS)
+        row$zeroed_CnFS <- mean(append(CnFS, rep(0, sum(!surviving_sims))))
         
         # resets the row back into the main dataframe
         sim_data_frame[i, ] <- row

@@ -19,7 +19,6 @@ echo $SLURM_JOB_NAME starting at $START_TIME with prospective end time of $END_T
 
 # copy the script to the node
 cp "../scripts/" $TMPDIR -r
-cp "../data/Mps1_t302_p3.RData" $TMPDIR
 
 # modules for running scripts
 module purge
