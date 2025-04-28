@@ -97,12 +97,13 @@ for (organoid_name in names(organoid_cns)){
                                 euploid_ref = aneuploid_base,
                                 g = GENERATIONS, max_num_cells = MAX_CELLS,
                                 coef = coeff_struct, pMisseg = row$p_misseg,
-                                fit_misseg = FALSE, fit_division = TRUE)
+                                fit_misseg = FALSE, fit_division = TRUE,
+                                pDivision = 0)
 
         # saves the sim results to disk
         sim_name <- paste0(sim_type, "_misseg_", round(row$p_misseg, 7),
                         "_div_FC_", row$division_FC,
-                        "_surv_FC", row$survival_FC, ".Rds")
+                        "_surv_FC_", row$survival_FC, ".Rds")
         saveRDS(sim_list, file.path("results", sim_name))
 
         # uses a util function to determine which simulations were viable (max_cells or max_generations)

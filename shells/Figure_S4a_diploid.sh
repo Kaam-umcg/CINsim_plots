@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#SBATCH --job-name=Fig_S4c_diploid
-#SBATCH --time=1-00:00
+#SBATCH --job-name=Fig_S4a_diploid
+#SBATCH --time=2-00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=6
 #SBATCH --mem-per-cpu=4GB
-#SBATCH --error=errors/Figure_S4c_diploid.err
-#SBATCH --output=outputs/Figure_S4c_diploid.log
+#SBATCH --error=errors/Figure_S4a_diploid.err
+#SBATCH --output=outputs/Figure_S4a_diploid.log
 
 ######
 # CHANGE THE NAME OF THE JOB TO THE SCRIPT NAME - OTHERWISE A LOT OF THINGS BREAK
