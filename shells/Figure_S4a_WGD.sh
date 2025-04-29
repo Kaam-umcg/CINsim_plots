@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=Fig_S4a_WGD
-#SBATCH --time=2-00:00
+#SBATCH --time=5-00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1

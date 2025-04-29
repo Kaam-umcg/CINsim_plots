@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#SBATCH --job-name=Fig_5
-#SBATCH --time=1-00:00
+#SBATCH --job-name=Fig_S2
+#SBATCH --time=0-12:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=10
-#SBATCH --mem-per-cpu=2GB
-#SBATCH --error=errors/Figure_5.err
-#SBATCH --output=outputs/Figure_5.log
+#SBATCH --cpus-per-task=6
+#SBATCH --mem-per-cpu=4GB
+#SBATCH --error=errors/Figure_S2.err
+#SBATCH --output=outputs/Figure_S2.log
 
 ######
 # CHANGE THE NAME OF THE JOB TO THE SCRIPT NAME - OTHERWISE A LOT OF THINGS BREAK
@@ -19,15 +19,14 @@ echo $SLURM_JOB_NAME starting at $START_TIME with prospective end time of $END_T
 
 # copy the script to the node
 cp "../scripts/" $TMPDIR -r
-cp "../data/" $TMPDIR -r
 
 # modules for running scripts
 module purge
 module load R/4.4.1-gfbf-2023b
 
 # run your script
-Rscript $TMPDIR/scripts/Figure_4.R
+Rscript $TMPDIR/scripts/Figure_S2.R
 
 # copies all relevant results to SCRATCH
-mkdir -p $SCRATCH/CINsim/Figure_4
-cp $TMPDIR $SCRATCH/CINsim/Figure_4 -r
+mkdir -p $SCRATCH/CINsim/Figure_S2
+cp $TMPDIR $SCRATCH/CINsim/Figure_S2 -r

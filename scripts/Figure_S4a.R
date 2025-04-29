@@ -92,7 +92,7 @@ for (organoid_name in names(organoid_cns)){
         # does the simulation for the given parameters in row
         sim_list <- parallelCinsim(selection_metric = organoid_cn,
                                 selection_mode = "cn_based",
-                                iterations = 6, cores = 6, 
+                                iterations = ITERATIONS, cores = 6, 
                                 karyotypes = start_karyotype, 
                                 euploid_ref = aneuploid_base,
                                 g = GENERATIONS, max_num_cells = MAX_CELLS,
