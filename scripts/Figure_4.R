@@ -22,6 +22,7 @@ if (!dir.exists("results/T_ALL_params_t302")){
 GENERATIONS <- 250
 ITERATIONS <- 100
 MAX_CELLS <- 10e10
+CORES_AVAIL <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK"))
 
 # source some utils functions for CnFS and viability
 source("scripts/utils/CnFS.R")
@@ -90,7 +91,7 @@ best_sim <- "no best sim yet"
 # sets the coeffs for the simulation
 coeff_struct <- list(NULL, NULL)
 names(coeff_struct) <- c("pDivision", "pSurvival")
-coeff_struct$pSurvival <- c(0.04049, 0.40410)
+coeff_struct$pSurvival <- c(0.04049, 0.40410) # these values equal surv_FC = 1.11...
 names(coeff_struct$pSurvival) <- c("a", "b")
 
 # we create an object to store the results in and init some NA values
@@ -124,7 +125,7 @@ for (i in 1:nrow(sim_df)){
   # runs the simulations for 1 entry in the heatmap. We only vary
   # the pDivision, as pMisseg is iterated in the loop.
   sim_list <- parallelCinsim(iterations = ITERATIONS,                   
-                   cores = 10,
+                   cores = CORES_AVAIL,
                    karyotypes = NULL,
                    euploid_ref = 2,
                    g = GENERATIONS,
@@ -132,7 +133,6 @@ for (i in 1:nrow(sim_df)){
                    pMisseg = row$pMisseg,
                    selection_mode = "cn_based",
                    selection_metric = t302_p3,
-                   probability_types = c("pDivision", "pSurvival"),
                    coef = coeff_struct,
                    fit_division = TRUE,
                    collect_fitness_score = TRUE,

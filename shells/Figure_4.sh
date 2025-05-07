@@ -6,7 +6,7 @@
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=10
-#SBATCH --mem-per-cpu=2GB
+#SBATCH --mem-per-cpu=4GB
 #SBATCH --error=errors/Figure_4.err
 #SBATCH --output=outputs/Figure_4.log
 
