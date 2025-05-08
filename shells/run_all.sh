@@ -2,14 +2,22 @@
 # I manually update this, as I prefer giving a last check before eating a ton
 # of computation time.
 
-# sets all the scripts for the main figures
+####
+# MAIN FIGURE SCRIPTS
+####
 sbatch Figure_1.sh
 sbatch Figure_2.sh
+
+# split this into two for performance and parallelisation reasons
 sbatch Figure_3A.sh
 sbatch Figure_3C.sh
 
+# 3E needs to have results from a few other simulations, so you have to wait with
+# starting that script till later in the worflow
+# sbatch Figure_3E.sh
 sbatch Figure_4.sh
 
+sbatch Figure_5.sh
 sbatch Figure_S1.sh
 sbatch Figure_S2.sh
 

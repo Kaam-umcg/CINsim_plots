@@ -207,8 +207,7 @@ row_title[[3]] <- ggplot() +
            size = 6, angle = 0) + theme_void()
 
 # continues with making the patchwork for the first plot
-pdf(file = "plots/figure_S2/fig_S2a.pdf")
-combined_plot <- row_title[[1]] +
+patch_p <- row_title[[1]] +
   all_plots[[1]] + all_plots[[2]] + all_plots[[3]] + all_plots[[4]] + 
   all_plots[[5]] + all_plots[[6]] + all_plots[[7]] +
   row_title[[2]] + 
@@ -219,8 +218,7 @@ combined_plot <- row_title[[1]] +
   all_plots[[19]] + all_plots[[20]] + all_plots[[21]] +
   plot_layout(ncol = 8, nrow = 3, width = c(2, rep(1, 7)),
                              guides = "collect", axes = "collect")
-dev.off()
-
+ggsave("plots/figure_S2/fig_s2a.pdf", plot = patch_p)
 
 # Continues with plot S2b, which requires we do pairwise comparisons between
 # all the karyotypes
