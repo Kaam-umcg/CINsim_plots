@@ -96,6 +96,7 @@ for (condition in names(best_sims)){
 Mps1_measures <- CINsim::karyotype_measures
 row <- plot_df[plot_df$sim_type == "Mps1", ]
 
+# need to skip X chromosome in this calculation - currently it's taken with the result
 row$aneuploidy <- mean(unlist(Mps1_measures[Mps1_measures$parameter == "aneuploidy", "score"]))
 row$heterogeneity <- mean(unlist(Mps1_measures[Mps1_measures$parameter == "heterogeneity", "score"]))
 

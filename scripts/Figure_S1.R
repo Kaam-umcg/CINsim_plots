@@ -58,7 +58,7 @@ args <- expand.grid(down_sample_frac = down_sample_frac,
                     down_sample = down_sample)
 
 # generate 200 euploid karyotypes
-karyotypes <- makeKaryotypes(200, numCell = 1)
+karyotypes <- makeKaryotypes(numCell = 200, species = "mouse", copies = 2)
 
 # simulate 50 rounds of cell divisions, without CIN
 sim_data <- pmap(args, parallelCinsim_simple, 
@@ -107,13 +107,15 @@ sim_data_compiled %>%
   geom_tile(aes(fill = mean_freq), col = "grey") +
   geom_text(aes(label = signif(mean_freq, 2)),
             col = "white") +
+  geom_rect(aes(xmin = 3.5, xmax = 4.5, ymin = 1.5, ymax = 2.5),
+            color ="red", fill = NA, linewidth = 1) +
   scale_fill_viridis_c(begin = 0, end = 1) +
   scale_y_discrete(labels = scales::math_format(frac(1, .x))) +
+  
   labs(x = "Down sample threshold", y = "Down sample fraction", 
        fill = "Fraction of clones",
-       title = "Clonal survival to 50 generation (200 clones)") +
-  cinsim_theme()
-ggsave("plots/figure_S1/figure_s1b.pdf")
+       title = "Clonal survival to 50 generation (200 clones)") 
+ggsave("plots/figure_S1/fig_s1b.pdf", width = 7, height = 7, unit = "in")
 
 # Figure S1c
 pMissegs <- 10^seq(-6, 0, length.out = 30)
