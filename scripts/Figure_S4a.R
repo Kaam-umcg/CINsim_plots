@@ -7,6 +7,8 @@ library(purrr)
 GENERATIONS <- 250
 MAX_CELLS <- 5e10
 ITERATIONS <- 6
+START_CELLS <- 1000
+CORES_AVAIL <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK"))
 
 # changes wd to node specific folder
 setwd(Sys.getenv("TMPDIR"))
@@ -20,7 +22,6 @@ if (!dir.exists("results")){
 }
 
 # sources all required util scripts - part of CINsim package in full release
-source("scripts/utils/CnFS.R")  
 source("scripts/utils/check_viability.R")
 
 # sets seed for reproducibility
@@ -32,16 +33,20 @@ organoid_cns <- readRDS("data/organoid_cn_freqs.Rds")
 # determines WGD or diploid starting karyotype
 sim_type <- Sys.getenv("SIM_TYPE")
 if (sim_type == "WGD"){
-  aneuploid_base <- 4
-  start_karyotype <- makeKaryotypes(numCell = 1, species = "human", copies = 4)
+  aneuploid_base <- 2 # used to be 4, but has huge effect on coefficients
+  start_karyotype <- makeKaryotypes(numCell = START_CELLS, species = "human", copies = 4)
   cat("Starting for a standard CN of 4")
 }else if (sim_type == "diploid"){
   aneuploid_base <- 2
-  start_karyotype <- makeKaryotypes(numCell = 1, species = "human", copies = 2)
+  start_karyotype <- makeKaryotypes(numCell = START_CELLS, species = "human", copies = 2)
   cat("Starting for a standard CN of 2")
 }else{
   cat("Incorrect sim_type - needs to be 'WGD' or 'diploid'")
 }
+
+#TODO - due to a bug somewhere in CINsim (issue#9) I need to set the rownames
+# of all the cells to the same to prevent crashing at the end of a sim
+rownames(start_karyotype) <- rep("cell_1", START_CELLS)
 
 # loop over all the unique organoid cn_frequencies
 for (organoid_name in names(organoid_cns)){
@@ -70,7 +75,6 @@ for (organoid_name in names(organoid_cns)){
     # for this specific organoid
     sim_data_frame <- data.frame(
     CnFS = NA,
-    zeroed_CNFS = NA, 
     viability = NA,
     p_misseg = rep(p_missegs, each = length(division_FC_vals) * length(survival_FC_vals)),
     division_FC = rep(division_FC_vals, times = length(survival_FC_vals)), 
@@ -78,7 +82,7 @@ for (organoid_name in names(organoid_cns)){
     sim_type = sim_type)
 
     cat("\nLog: need to do a total of", dim(sim_data_frame)[1], "simulation for organoid", 
-          organoid_name, "for condition", sim_type)
+          organoid_name, "for condition", sim_type, "\n")
 
     # does every simulation 1 by 1, doing 6 repeats of each sim
     for (i in 1:nrow(sim_data_frame)){
@@ -92,13 +96,14 @@ for (organoid_name in names(organoid_cns)){
         # does the simulation for the given parameters in row
         sim_list <- parallelCinsim(selection_metric = organoid_cn,
                                 selection_mode = "cn_based",
-                                iterations = ITERATIONS, cores = 6, 
+                                iterations = ITERATIONS, cores = CORES_AVAIL, 
                                 karyotypes = start_karyotype, 
                                 euploid_ref = aneuploid_base,
                                 g = GENERATIONS, max_num_cells = MAX_CELLS,
                                 coef = coeff_struct, pMisseg = row$p_misseg,
                                 fit_misseg = FALSE, fit_division = TRUE,
-                                pDivision = 0)
+                                pDivision = 0, CnFS = TRUE, 
+                                collect_fitness_score = TRUE)
 
         # saves the sim results to disk
         sim_name <- paste0(sim_type, "_misseg_", round(row$p_misseg, 7),
@@ -113,10 +118,23 @@ for (organoid_name in names(organoid_cns)){
         row$viability <- sum(surviving_sims)/ ITERATIONS
 
         # gets both the CnFS of all viable sims and the score is non_surviving sims are assigned 0
-        CnFS <- unlist(lapply(sim_list[surviving_sims], get_CnFS))
-        row$CnFS <- mean(CnFS)
-        row$zeroed_CnFS <- mean(append(CnFS, rep(0, sum(!surviving_sims))))
+        # CnFS <- unlist(lapply(sim_list[surviving_sims], get_CnFS))
+        # row$CnFS <- mean(CnFS)
+        # row$zeroed_CnFS <- mean(append(CnFS, rep(0, sum(!surviving_sims))))
         
+        final_CnFS <- sapply(1:ITERATIONS, function(i) {
+          sim_list[[i]]$gen_measures$CnFS[length(sim_list[[i]]$gen_measures$CnFS)]
+          })
+        row$CnFS <- mean(final_CnFS)
+
+        # prints some summary statistics for checking in the logs
+        cat("Results for this row are: \n")
+        print(row)
+        cat("With final_CnFS per simulation values of: \n")
+        print(final_CnFS)
+        cat("And the following coefficients: \n")
+        print(coeff_struct)
+
         # resets the row back into the main dataframe
         sim_data_frame[i, ] <- row
     }

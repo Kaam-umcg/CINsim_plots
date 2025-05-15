@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=Fig_5
-#SBATCH --time=1-00:00
+#SBATCH --time=0-10:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
@@ -26,8 +26,8 @@ module purge
 module load R/4.4.1-gfbf-2023b
 
 # run your script
-Rscript $TMPDIR/scripts/Figure_4.R
+Rscript $TMPDIR/scripts/Figure_5.R
 
 # copies all relevant results to SCRATCH
-mkdir -p $SCRATCH/CINsim/Figure_4
-cp $TMPDIR $SCRATCH/CINsim/Figure_4 -r
+mkdir -p $SCRATCH/CINsim/Figure_5
+cp $TMPDIR $SCRATCH/CINsim/Figure_5 -r
