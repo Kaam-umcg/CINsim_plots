@@ -7,9 +7,10 @@ library(purrr)
 GENERATIONS <- 250
 MAX_CELLS <- 5e10
 ITERATIONS <- 6
-START_CELLS <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK"))
+START_CELLS <- as.integer(Sys.getenv("START_CELLS"))
 CORES_AVAIL <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK"))
 results_dir <- file.path("results", as.character(START_CELLS))
+
 # changes wd to node specific folder
 setwd(Sys.getenv("TMPDIR"))
 
