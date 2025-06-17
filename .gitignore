@@ -2,3 +2,4 @@
 *.log
 benchmark/results
 archive
+shells/Figure_S4a_*_cells.sh

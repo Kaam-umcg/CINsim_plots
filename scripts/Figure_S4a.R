@@ -7,18 +7,21 @@ library(purrr)
 GENERATIONS <- 250
 MAX_CELLS <- 5e10
 ITERATIONS <- 6
-START_CELLS <- 1000
+START_CELLS <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK"))
 CORES_AVAIL <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK"))
-
+results_dir <- file.path("results", as.character(START_CELLS))
 # changes wd to node specific folder
 setwd(Sys.getenv("TMPDIR"))
+
+cat("Using number of starting cells:\n")
+print(START_CELLS)
 
 if (!dir.exists("plots/figure_S4a")){
   dir.create("plots/figure_S4a", recursive = TRUE)
 }
 
-if (!dir.exists("results")){
-  dir.create("results", recursive = TRUE)
+if (!dir.exists(results_dir)){
+  dir.create(results_dir, recursive = TRUE)
 }
 
 # sources all required util scripts - part of CINsim package in full release
@@ -140,5 +143,5 @@ for (organoid_name in names(organoid_cns)){
     }
 
     # at the end of the loop, we save the sim_data_frame with viability and CnFS for later plotting
-    saveRDS(sim_data_frame, paste0("results/", organoid_name, ".Rds"))
+    saveRDS(sim_data_frame, paste0(results_dir, "/", organoid_name, ".Rds"))
 }

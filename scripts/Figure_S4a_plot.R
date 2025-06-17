@@ -14,10 +14,11 @@ if (!dir.exists("results")){
 # sets seed for reproducibility 
 set.seed(42)
 
-# hardcoded path, change this if you're reproducing
-BASE_DATA_PATH <- "/scratch/p319788/CINsim"
-DIPLOID_PATH <- "Figure_S4a_diploid/tmp/results"
-WGD_PATH <- "Figure_S4a_WGD/tmp/results"
+# Gets paths from associated .sh scripts
+BASE_DATA_PATH <- Sys.getenv("BASE_PATH")
+DIPLOID_PATH <- Sys.getenv("DIPLOID_PATH")
+WGD_PATH <- Sys.getenv("WGD_PATH")
+OUTPUT_PATH <- Sys.getenv("OUTPUT_PATH")
 
 # these should be consistent though!
 ORGANOID_NAMES <- c("14T", "16T", "9T", "24TB")
@@ -60,15 +61,15 @@ for(load_path in c(DIPLOID_PATH, WGD_PATH)){
                 #                    size = 3, shape = 4) +  
 
                         p1 <- ggplot(plot_data, aes(x = division_FC, y = p_misseg)) +
-                        geom_tile(aes(fill = CnFS), color = "white", lwd = 0.2, linetype = 1) +
-                        scale_fill_gradient(low = "blue", high = "yellow", name = "CnFS") +
-                        scale_y_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)), 
-                                breaks = 10^(-6:-1)) +
-                        scale_x_discrete(name = "Division FC", breaks = c(10, 5, 3.33, 2.5, 2, 1.67, 1.43, 1.25, 1.11),
-                                limits = unique(plot_data$division_FCs)) +
-                        labs(x = "Division FC", y = "p misseg") +
-                        theme(aspect.ratio = 1, panel.grid = element_blank()) +
-                        coord_fixed()
+                                geom_tile(aes(fill = CnFS), color = "white", lwd = 0.2, linetype = 1) +
+                                scale_fill_gradient(low = "blue", high = "yellow", name = "CnFS") +
+                                scale_y_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)), 
+                                        breaks = 10^(-6:-1)) +
+                                scale_x_discrete(name = "Division FC", breaks = c(10, 5, 3.33, 2.5, 2, 1.67, 1.43, 1.25, 1.11),
+                                        limits = unique(plot_data$division_FCs)) +
+                                labs(x = "Division FC", y = "p misseg") +
+                                theme(aspect.ratio = 1, panel.grid = element_blank()) +
+                                coord_fixed()
                         ggsave(filename = file.path("plots/figure_S4", paste0(organoid, "_", sim_type, "_", surv_FC,".pdf")))
                         saveRDS(plot_data, file = file.path("results", paste0(organoid, "_", sim_type, "_", surv_FC,".Rds")))
                         # now that we have the plot, we want to store it before composing the entire patchwork
