@@ -27,6 +27,7 @@ module load R/4.4.1-gfbf-2023b
 
 # exports whether these simulations are diploid or WGD (quadploid)
 export "SIM_TYPE"="diploid"
+export "START_CELLS"="10"
 
 # run your script
 Rscript $TMPDIR/scripts/Figure_S4a.R

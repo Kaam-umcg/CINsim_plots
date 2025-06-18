@@ -54,6 +54,7 @@ rownames(start_karyotype) <- rep("cell_1", START_CELLS)
 
 # loop over all the unique organoid cn_frequencies
 for (organoid_name in names(organoid_cns)){
+
     organoid_cn <- organoid_cns[[organoid_name]]
 
     # gets all the required simulation parameters
@@ -110,10 +111,10 @@ for (organoid_name in names(organoid_cns)){
                                 collect_fitness_score = TRUE)
 
         # saves the sim results to disk
-        sim_name <- paste0(sim_type, "_misseg_", round(row$p_misseg, 7),
+        sim_name <- paste0(sim_type, "_", organoid_name, "_misseg_", round(row$p_misseg, 7),
                         "_div_FC_", row$division_FC,
                         "_surv_FC_", row$survival_FC, ".Rds")
-        saveRDS(sim_list, file.path("results", sim_name))
+        saveRDS(sim_list, file.path(results_dir, sim_name))
 
         # uses a util function to determine which simulations were viable (max_cells or max_generations)
         surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x, 

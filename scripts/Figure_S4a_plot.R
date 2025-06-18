@@ -19,6 +19,7 @@ BASE_DATA_PATH <- Sys.getenv("BASE_PATH")
 DIPLOID_PATH <- Sys.getenv("DIPLOID_PATH")
 WGD_PATH <- Sys.getenv("WGD_PATH")
 OUTPUT_PATH <- Sys.getenv("OUTPUT_PATH")
+NUM_CELLS <- Sys.getenv("START_CELLS")
 
 # these should be consistent though!
 ORGANOID_NAMES <- c("14T", "16T", "9T", "24TB")
