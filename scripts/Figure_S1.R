@@ -292,6 +292,6 @@ p1 <- p1 +
   geom_abline(slope = coef_tibble$a[1]/3, intercept = coef_tibble$b[1]/3, col = "orange", size = 1) +
   geom_abline(slope = coef_tibble$a[2]/3, intercept = coef_tibble$b[2]/3, col = "red", size = 1) +
   scale_y_continuous(sec.axis = sec_axis(transform = ~ .*3, name = "pSurvival", breaks = seq(0, 1, 0.25)))
-ggsave(file = "plots/figure_S1/figure_s1d.pdf", plot = p1)  
+ggsave(file = "plots/figure_S1/figure_s1f.pdf", plot = p1)  
 
 # Figure S1g is handmade, so we skip it here
