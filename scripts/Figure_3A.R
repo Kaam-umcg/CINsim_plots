@@ -179,7 +179,7 @@ ggplot(sim_df, aes(x = division_FCs, y = pMisseg)) +
         axis.text.y = element_text(vjust = 1, size = 15),
         axis.title = element_text(size = 15),
         aspect.ratio = 1, panel.grid = element_blank())
-ggsave("plots/figure_3A/figure_3a.pdf")
+ggsave("plots/figure_3A/fig_3a.pdf")
 
 # we then create all the other relevant plots for this section of Figure 3, specifically 3B & C
 # as they're based on the results of this simulation
@@ -198,7 +198,7 @@ p + theme(axis.text.x = element_text(hjust = 1, size = 15),
         plot.subtitle = element_text(hjust = 0.5, size = 14)) +
     labs(title = "Copy number frequency", subtitle = "(optimal Division FC and p_misseg)") +
     scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_3A/figure_3b1.pdf", plot = p)
+ggsave("plots/figure_3A/fig_3b1.pdf", plot = p)
 
 # Figure 3C can be recreated by running the code below:
 # we keep randomly sampling simulations untill we find a viable one
@@ -219,10 +219,10 @@ while (!viable_sim & (iters < length(optimal_params_sim))) {
 }
 
 p <- cnvHeatmap(selected_sim, subset_size = 1000)
-p + theme(axis.text.x = element_text(hjust = 1, size = 15),
-          axis.title = element_text(size = 15), aspect.ratio = 1,
+p <- p + theme(axis.text.x = element_text(size = 15),
+          axis.title = element_text(hjust = 0.5, size = 15), aspect.ratio = 1,
           plot.title = element_text(hjust = 0.5, size = 18),
           plot.subtitle = element_text(hjust = 0.5, size = 14)) +
   labs(title = "Karyotype landscape", subtitle = "(optimal Division FC and p_misseg)") +
   scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_3A/figure_3b2.pdf", plot = p)
+ggsave("plots/figure_3A/fig_3b2.pdf", plot = p)

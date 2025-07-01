@@ -7,8 +7,8 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem-per-cpu=2GB
-#SBATCH --error=errors/Figure_S4a_plot_10.err
-#SBATCH --output=outputs/Figure_S4a_plot_10.log
+#SBATCH --error=errors/Figure_S4a_plot.err
+#SBATCH --output=outputs/Figure_S4a_plot.log
 
 ######
 # CHANGE THE NAME OF THE JOB TO THE SCRIPT NAME - OTHERWISE A LOT OF THINGS BREAK
@@ -28,7 +28,7 @@ module load R/4.4.1-gfbf-2023b
 export "BASE_PATH"="/scratch/p319788/CINsim"
 export "DIPLOID_PATH"="Figure_S4a_diploid/tmp/results"
 export "WGD_PATH"="Figure_S4a_WGD/tmp/results"
-export "OUTPUT_PATH"="/scratch/p319788/CINsim/Figure_S4a_10_cells/"
+export "OUTPUT_PATH"="/scratch/p319788/CINsim/Figure_S4a_plots"
 
 # run your script
 Rscript $TMPDIR/scripts/Figure_S4a_plot.R

@@ -172,10 +172,10 @@ ggplot(sim_df, aes(x = division_FCs, y = pMisseg)) +
   labs(x = "Division FC", y = p_lab, 
        title = "Karyotype similarity", subtitle = expression("optimal p_misseg")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 15),
-        axis.text.y = element_text(vjust = 1, size = 15),
+        axis.text.y = element_text(size = 15),
         axis.title = element_text(size = 15),
         aspect.ratio = 1, panel.grid = element_blank())
-ggsave("plots/figure_3C/figure_3c.pdf")
+ggsave("plots/figure_3C/fig_3c.pdf")
 
 # we then create all the other relevant plots for this section of Figure 3, specifically 3D
 # as they're based on the results of this simulation
@@ -187,14 +187,14 @@ saveRDS(optimal_params_sim, "/scratch/p319788/CINsim/best_sims/full.Rds")
 p <- plot_cn(optimal_params_sim) 
 
 # then we do some manual adding of extra elements, mainly styling text
-p + theme(axis.text.x = element_text(hjust = 1, size = 15),
-        axis.text.y = element_text(vjust = 1, size = 15),
+p + theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
         axis.title = element_text(size = 15), aspect.ratio = 1,
         plot.title = element_text(hjust = 0.5, size = 18),
         plot.subtitle = element_text(hjust = 0.5, size = 14)) +
     labs(title = "Copy number frequency", subtitle = "(optimal Division FC and p_misseg)") +
     scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_3C/figure_3d1.pdf", plot = p)
+ggsave("plots/figure_3C/fig_3d1.pdf", plot = p)
 
 # Figure 3C can be recreated by running the code below:
 # we keep randomly sampling simulations untill we find a viable one
@@ -215,10 +215,10 @@ while (!viable_sim & (iters < length(optimal_params_sim))) {
 }
 
 p <- cnvHeatmap(selected_sim, subset_size = 1000)
-p + theme(axis.text.x = element_text(hjust = 1, size = 15),
+p <- p + theme(axis.text.x = element_text(size = 15),
           axis.title = element_text(size = 15), aspect.ratio = 1,
           plot.title = element_text(hjust = 0.5, size = 18),
           plot.subtitle = element_text(hjust = 0.5, size = 14)) +
-  labs(title = "Karyotype landscape", subtitle = "(optimal Division FC and p_misseg)") +
+  labs(title = "Karyotype landscape", subtitle = "(optimal Division FC and p_misseg, survival FC = 1.11)") +
   scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_3C/figure_3d2.pdf", plot = p)
+ggsave("plots/figure_3C/fig_3d2.pdf", plot = p)

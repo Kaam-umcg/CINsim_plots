@@ -201,20 +201,21 @@ ggsave("plots/figure_2/figure_2b.pdf")
 # survival_FC and p_misseg and use those for loading the relevant simulations
 optimal_params_sim <- readRDS(file.path("results/T_ALL_params", best_sim))
 
-# TODO: hardcoded filepath for saving the best sim for Fig 3E
+# TODO: hardcoded filepath for saving the best sim for Fig 2C
 saveRDS(optimal_params_sim, "/scratch/p319788/CINsim/best_sims/survival.Rds")
 
 # uses the build-in plot_cn function from CINsim to get our initial plot
 p <- plot_cn(optimal_params_sim) 
 
 # then we do some manual adding of extra elements, mainly styling text
-p + theme(axis.text.x = element_text(hjust = 1, size = 15),
-        axis.text.y = element_text(vjust = 1, size = 15),
+p <- p + theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
         axis.title = element_text(size = 15), aspect.ratio = 1,
         plot.title = element_text(hjust = 0.5, size = 18),
         plot.subtitle = element_text(hjust = 0.5, size = 14)) +
-    labs(title = "Copy number frequency", subtitle = "(optimal p_misseg)") +
+    labs(title = "Copy number frequency") +
     scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
+
 ggsave("plots/figure_2/figure_2c.pdf", plot = p)
 
 # Figure 2d can be recreated by running the code below:
@@ -236,7 +237,7 @@ while (!viable_sim & (iters < length(optimal_params_sim))) {
 }
 
 p <- cnvHeatmap(selected_sim, subset_size = 1000)
-p + theme(axis.text.x = element_text(hjust = 1, size = 15),
+p <- p + theme(axis.text.x = element_text(size = 15),
           axis.title = element_text(size = 15), aspect.ratio = 1,
           plot.title = element_text(hjust = 0.5, size = 18),
           plot.subtitle = element_text(hjust = 0.5, size = 14)) +

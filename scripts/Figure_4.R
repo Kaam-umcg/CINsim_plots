@@ -60,7 +60,7 @@ p <- ggplot(t302_p3_melt, aes(x = Chromosome, y = Fraction,
   theme(axis.text.x = element_text(size = 15),
         axis.text.y = element_text(size = 15),
         axis.title = element_text(size = 15), aspect.ratio = 1)
-ggsave("plots/figure_4/figure_4b.pdf", plot = p)
+ggsave("plots/figure_4/fig_4b.pdf", plot = p)
 
 # Moving on to figure 4D:
 # we have to do a similar parameter search to other heatmaps we did earlier
@@ -200,7 +200,7 @@ ggplot(sim_df, aes(x = division_FCs, y = pMisseg)) +
         axis.text.y = element_text(vjust = 1, size = 15),
         axis.title = element_text(size = 15),
         aspect.ratio = 1, panel.grid = element_blank())
-ggsave("plots/figure_4/figure_4d.pdf")
+ggsave("plots/figure_4/fig_4d.pdf")
 
 # Figure 4E
 optimal_params_sim <- readRDS(file.path("results/T_ALL_params_t302", best_sim))
@@ -209,14 +209,14 @@ optimal_params_sim <- readRDS(file.path("results/T_ALL_params_t302", best_sim))
 p <- plot_cn(optimal_params_sim) 
 
 # then we do some manual adding of extra elements, mainly styling text
-p + theme(axis.text.x = element_text(hjust = 1, size = 15),
+p <- p + theme(axis.text.x = element_text(hjust = 1, size = 15),
         axis.text.y = element_text(vjust = 1, size = 15),
         axis.title = element_text(size = 15), aspect.ratio = 1,
         plot.title = element_text(hjust = 0.5, size = 18),
         plot.subtitle = element_text(hjust = 0.5, size = 14)) +
     labs(title = "Copy number frequency", subtitle = "(optimal Division FC and p_misseg)") +
     scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_4/figure_4e.pdf", plot = p)
+ggsave("plots/figure_4/fig_4e.pdf", plot = p)
 
 # Figure 4F
 # we keep randomly sampling simulations untill we find a viable one
@@ -237,10 +237,10 @@ while (!viable_sim & (iters < length(optimal_params_sim))) {
 }
 
 p <- cnvHeatmap(selected_sim, subset_size = 1000)
-p + theme(axis.text.x = element_text(hjust = 1, size = 15),
-          axis.title = element_text(size = 15), aspect.ratio = 1,
+p <- p + theme(axis.text.x = element_text(size = 15),
+          axis.title = element_text(size = 15),
           plot.title = element_text(hjust = 0.5, size = 18),
           plot.subtitle = element_text(hjust = 0.5, size = 14)) +
   labs(title = "Karyotype landscape", subtitle = "(optimal Division FC and p_misseg)") +
   scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_4/figure_4f.pdf", plot = p)
+ggsave("plots/figure_4/fig_4f.pdf", plot = p)

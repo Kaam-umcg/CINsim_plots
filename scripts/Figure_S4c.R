@@ -89,6 +89,7 @@ ggplot(frequency_data, aes(x = n_missegs, y = frequency / REPEATS, color = p_mis
     x = "Number of mis-segregation events",
     y = "Probability",
     color = "p_missegs") +
+    scale_x_continuous(breaks = 0:8, limits = c(0, 9)) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5))

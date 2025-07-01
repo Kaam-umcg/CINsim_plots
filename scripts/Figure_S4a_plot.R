@@ -31,7 +31,7 @@ for(load_path in c(DIPLOID_PATH, WGD_PATH)){
         }else{
                 sim_type <- "diploid"
         }
-        if(sim_type == "diploid"){next} #for skipping diploid plotting
+#        if(sim_type == "diploid"){next} #for skipping diploid plotting
 
         for (organoid in ORGANOID_NAMES){
                 # compiles and loads the data
@@ -52,6 +52,9 @@ for(load_path in c(DIPLOID_PATH, WGD_PATH)){
                 # theme(aspect.ratio = 1) +
                 # coord_fixed()
                 # )
+
+                # define min and max for all plots within an organoid
+                
 
                 # we need to make plots per survival FC
                 for (surv_FC in unique(sim_data$survival_FC)){

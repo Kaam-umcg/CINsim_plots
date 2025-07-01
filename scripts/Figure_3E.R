@@ -3,6 +3,7 @@ library(dplyr)
 library(tidyr)
 library(purrr)
 library(ggplot2)
+library(ggsignif)
 
 # sets wd to location of the script - this is dirty, and I do not 
 # recommend it for anyone else following in my footsteps.
@@ -106,6 +107,7 @@ df_3cond <- filter(plot_df, sim_type %in% c("Survival", "Division", "Full"))
 plot_df$sim_type <- factor(plot_df$sim_type)
 # now we can actually start making the plots
 
+# original plot p1
 p1 <- ggplot(df_3cond, aes(x = sim_type, y = CnFS, fill = sim_type)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black", show.legend = FALSE) +
   geom_errorbar(aes(ymin = CnFS - CnFS_error, ymax = CnFS + CnFS_error), width = 0.2, color = "black") +
@@ -113,6 +115,9 @@ p1 <- ggplot(df_3cond, aes(x = sim_type, y = CnFS, fill = sim_type)) +
   theme_minimal() +
   labs(title = "Karyotype similarity", y = "CnFS")
 ggsave("plots/figure_3E/fig_3e.pdf", plot = p1)
+
+# updating plot p1
+
 
 p2 <- ggplot(df_3cond, aes(x = sim_type, y = generations, fill = sim_type)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black", show.legend = FALSE) +
