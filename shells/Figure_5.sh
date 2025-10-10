@@ -5,8 +5,8 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=10
-#SBATCH --mem-per-cpu=2GB
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=4GB
 #SBATCH --error=errors/Figure_5.err
 #SBATCH --output=outputs/Figure_5.log
 
