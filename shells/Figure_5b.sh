@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#SBATCH --job-name=Fig_S4a_plot_10
-#SBATCH --time=00:10:00
+#SBATCH --job-name=Fig_5b
+#SBATCH --time=0-10:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=4GB
-#SBATCH --error=errors/Figure_S4a_plot.err
-#SBATCH --output=outputs/Figure_S4a_plot.log
+#SBATCH --error=errors/Figure_5b.err
+#SBATCH --output=outputs/Figure_5b.log
 
 ######
 # CHANGE THE NAME OF THE JOB TO THE SCRIPT NAME - OTHERWISE A LOT OF THINGS BREAK
@@ -25,14 +25,10 @@ cp "../data/" $TMPDIR -r
 module purge
 module load R/4.4.1-gfbf-2023b
 
-export "BASE_PATH"="/scratch/p319788/CINsim"
-export "DIPLOID_PATH"="Figure_S4a_diploid/tmp/results"
-export "WGD_PATH"="Figure_S4a_WGD/tmp/results"
-export "OUTPUT_PATH"="/scratch/p319788/CINsim/Figure_S4a_plots"
-
+cd $TMPDIR
 # run your script
-Rscript $TMPDIR/scripts/Figure_S4a_plot.R
+Rscript $TMPDIR/scripts/Figure_5b.R
 
 # copies all relevant results to SCRATCH
-mkdir -p $OUTPUT_PATH
-cp $TMPDIR $OUTPUT_PATH -r
+mkdir -p $SCRATCH/CINsim/Figure_5b
+cp $TMPDIR $SCRATCH/CINsim/Figure_5b -r
