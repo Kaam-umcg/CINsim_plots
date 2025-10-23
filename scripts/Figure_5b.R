@@ -92,7 +92,7 @@ p1 <- ggplot(df_summary, aes(x = organoid, y = mean_CnFS, fill = sim_type)) +
   ) +
   theme_minimal() +
   scale_fill_manual(values = c("WGD" = "#f8766d", "diploid" = "#00bfc4")) +
-  scale_y_break(c(4, 235)) 
+  scale_y_break(breaks = c(5, 220), scales = 0.75) 
 
 plot_fn <- "organoid_CnFS_comp_break.pdf"
 ggsave(file.path("plots/figure_5", plot_fn), plot = p1, useDingbats = FALSE, create.dir = TRUE)
