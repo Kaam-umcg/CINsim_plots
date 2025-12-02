@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#SBATCH --job-name=Fig_3C
-#SBATCH --time=5-00:00
+#SBATCH --job-name=Fig_S4a_plot_new_CnFS
+#SBATCH --time=00:10:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=20
+#SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=4GB
-#SBATCH --error=errors/Figure_3C_full_sweep.err
-#SBATCH --output=outputs/Figure_3C_full_sweep.log
+#SBATCH --error=errors/Figure_S4a_plot_new_CnFS.err
+#SBATCH --output=outputs/Figure_S4a_plot_new_CnFS.log
 
 ######
 # CHANGE THE NAME OF THE JOB TO THE SCRIPT NAME - OTHERWISE A LOT OF THINGS BREAK
@@ -19,14 +19,20 @@ echo $SLURM_JOB_NAME starting at $START_TIME with prospective end time of $END_T
 
 # copy the script to the node
 cp "../scripts/" $TMPDIR -r
+cp "../data/" $TMPDIR -r
 
 # modules for running scripts
 module purge
 module load R/4.4.1-gfbf-2023b
 
+export "BASE_PATH"="/scratch/p319788/CINsim"
+export "DIPLOID_PATH"="Figure_S4a_diploid/tmp/results"
+export "WGD_PATH"="Figure_S4a_WGD/tmp/results"
+export "OUTPUT_PATH"="/scratch/p319788/CINsim/Figure_S4a_plots"
+
 # run your script
-Rscript $TMPDIR/scripts/Figure_3C.R
+Rscript $TMPDIR/scripts/Figure_S4a_plot_new_CnFS.R
 
 # copies all relevant results to SCRATCH
-mkdir -p $SCRATCH/CINsim/Figure_3C
-cp $TMPDIR $SCRATCH/CINsim/Figure_3C -r
+mkdir -p $OUTPUT_PATH
+cp $TMPDIR $OUTPUT_PATH -r

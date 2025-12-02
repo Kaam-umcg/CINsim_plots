@@ -125,8 +125,9 @@ for (i in 1:nrow(sim_df)){
                    pMisseg = row$pMisseg,
                    selection_mode = "cn_based",
                    selection_metric = Mps1,
-                   probability_types = c("pSurvival"),
                    coef = survival_FCs[[idx_surv_FC]],
+                   CnFS = TRUE,
+                   KMS = FALSE,
                    collect_fitness_score = TRUE)
   
   # viability of the combination of p_misseg and survival_FC is defined

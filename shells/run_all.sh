@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # This script reruns all the shells present in this directory
 # I manually update this, as I prefer giving a last check before eating a ton
 # of computation time.
@@ -30,7 +32,8 @@ sbatch Figure S4c.sh
 
 # fig 5 needs a lot of hyperparam searching that is done for
 # supplemental figure S4, so we do it at the end
-# sbatch Figure_5.sh
+sbatch Figure_5.sh
+
 # since 3E needs results from all the other scripts before, 
 # we can't realistically run it parallel with the other scripts
-# sbatch Figure_3E.sh 
+sbatch Figure_3E.sh 

@@ -8,13 +8,18 @@ library(dplyr)
 # sets wd to location of the script - this is dirty, and I do not 
 # recommend it for anyone else following in my footsteps.
 setwd(Sys.getenv("TMPDIR"))
+wanted_survival_FC <- as.numeric(Sys.getenv("surv_FC"))
+print(wanted_survival_FC)
+plots_dir_path <- paste0("plots/single_sweep_T_ALL_", str(wanted_survival_FC))
 
-if (!dir.exists("plots/figure_3C")){
-  dir.create("plots/figure_3C", recursive = TRUE)
+if (!dir.exists(plots_dir_path)){
+  dir.create(plots_dir_path, recursive = TRUE)
 }
 
-if (!dir.exists("results/T_ALL_params_3C")){
-  dir.create("results/T_ALL_params_3C", recursive = TRUE)
+results_dir_path <- paste0("results/single_sweep_T_ALL_", str(wanted_survival_FC))
+
+if (!dir.exists(results_dir_path)){
+  dir.create(results_dir_path, recursive = TRUE)
 }
 
 cores_avail <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK"))
@@ -44,13 +49,14 @@ set.seed(42)
 # first we recreate all the division_FCs
 # because these aren't directly given to CINsim but used as a fit, we need
 # to determine the slope and intercept for a specific survival FC
-division_FCs <- make_cinsim_coeffcients(selection_metric = Mps1_X,
+division_FCs <- make_cinsim_coeffcients(selection_metric = Mps1,
                                         euploid_copy = 2,
                                         min_survival_euploid = 0.1, #  division_FC = 10
                                         max_survival_euploid =  0.9, # division_FC = 1.111.. 
                                         max_survival = 1,
                                         interval = 0.8 / 24,         # takes 25 samples
                                         probability_types = c("pDivision"))
+
 division_FC_vals = (1 / seq(0.1, 0.9, 0.8 / 24))
 # sets the names for easy indexing later
 names(division_FCs) <- division_FC_vals
@@ -67,15 +73,27 @@ best_sim <- "no best sim yet"
 # pSurvival is set to the values for 1.36 here
 coeff_struct <- list(NULL, NULL)
 names(coeff_struct) <- c("pDivision", "pSurvival")
-coeff_struct$pSurvival <- c(0.08727 , -0.33850)
-names(coeff_struct$pSurvival) <- c("a", "b")
+
+# determine the survival_FC based on what we get from the full_sweep_T_ALL shell script
+survival_euploid_wanted <- 1 / wanted_survival_FC
+
+# calcs the pSurvival coeffs
+pSurvival <- CINsim::make_cinsim_coeffcients(selection_metric = Mps1,
+                                          euploid_copy = 2,
+                                          min_survival_euploid = survival_euploid_wanted,
+                                          max_survival_euploid = survival_euploid_wanted,
+                                          interval = 0,
+                                          probability_types = c("pSurvival"))
+# extracts just the pSurvival coeffs
+pSurvival <- pSurvival$pSurvival
 
 # we create an object to store the results in and init some NA values
 sim_df <- data.frame(
   pMisseg = rep(pMissegs, each = length(division_FC_vals)),
   division_FCs = rep(division_FC_vals, times = length(pMissegs)),
+  surv_FC = wanted_survival_FC,
   viability = NA, 
-  CnFS = NA,
+  old_CnFS = NA,
   viable_sims = NA,
   non_zero_CnFS = NA)
 
@@ -97,9 +115,10 @@ for (i in 1:nrow(sim_df)){
   # collects the pDivision that changed with the consistent pSurvival
   coeff_struct$pDivision <- division_FCs[[idx_div_FC]]$pDivision
   coeff_struct$pMisseg <- division_FCs[[idx_div_FC]]$pMisseg
+  coeff_struct$pSurvival <- pSurvival
 
   # runs the simulations for 1 entry in the heatmap. We only vary
-  # the pDivision, as pMisseg is iterated in the loop.
+  # the pDivision, as pMisseg (and pSurvival) are iterated in the loop.
   sim_list <- parallelCinsim(iterations = ITERATIONS,                   
                    cores = cores_avail,
                    karyotypes = NULL,
@@ -127,27 +146,35 @@ for (i in 1:nrow(sim_df)){
   # the matching score of the combination of p_misseg and division_FC is defined
   # as the mean CnFS (Copy number Frequency Score) over all the viable sims +
   # 0 for all non-viable sims
-  CnFS <- unlist(lapply(sim_list[surviving_sims], get_CnFS))
-  row$non_zero_CnFS <- mean(CnFS)
+  old_CnFS <- unlist(lapply(sim_list[surviving_sims], get_CnFS))
+  row$non_zero_CnFS <- mean(old_CnFS)
 
-  row$CnFS <- mean(append(CnFS, rep(0, sum(!surviving_sims))))
+  row$old_CnFS <- mean(append(old_CnFS, rep(0, sum(!surviving_sims))))
   
   # saves the sim results to disk
   sim_name <- paste0("misseg_", round(row$pMisseg, 7),
                      "_div_FC_", round(row$division_FCs, 2), ".Rds")
-  saveRDS(sim_list, file.path("results/T_ALL_params_3C", sim_name))
+  saveRDS(sim_list, file.path(results_dir_path, sim_name))
   
   # updates the best scoring simulation
-  if (row$CnFS > highest_CnFS){
-    highest_CnFS <- row$CnFS
+  if (row$old_CnFS > highest_CnFS){
+    highest_CnFS <- row$old_CnFS
     best_sim <- sim_name
   }
   # finally, writes the relevant data to out plotting object
   sim_df[i, ] <- row
 }
 
+recalc_CnFS <- function(CnFS_score){
+  old_denominator <- 1 / CnFS_score
+  new_CnFS <- 1 / (old_denominator + 1)
+  return(new_CnFS)
+}
+
+sim_df$new_CnFS <- recalc_CnFS(sim_df$old_CnFS)
+
 # saving the metrics of the simulations for later use (if needed)
-saveRDS(sim_df, file.path("results/sim_div_3C.Rds"))
+saveRDS(sim_df, file.path(results_dir_path, "full_sweep_T_ALL_results.Rds"))
 
 # convert some vars to factor for the heatmap
 sim_df$division_FCs <- round(sim_df$division_FCs, 2)
@@ -158,12 +185,12 @@ p_lab <- bquote(italic(p)[misseg])
 
 # gets the location of highest CnFS
 red_star <- sim_df %>%
-  filter(CnFS == max(CnFS)) %>%
+  filter(new_CnFS == max(new_CnFS)) %>%
   select(division_FCs, pMisseg)
 
 # plotting the heatmap of p_misseg, div_FC, viability and CnFS
 ggplot(sim_df, aes(x = division_FCs, y = pMisseg)) +
-  geom_tile(aes(fill = CnFS, alpha = viability), color = "white", lwd = 0.2, linetype = 1) +
+  geom_tile(aes(fill = new_CnFS, alpha = viability), color = "white", lwd = 0.2, linetype = 1) +
   scale_fill_gradient(low = "blue", high = "yellow", name = "CnFS") +
   scale_alpha_continuous(range = c(0.1, 1), name = "Viability") +
   scale_y_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)),
@@ -178,13 +205,13 @@ ggplot(sim_df, aes(x = division_FCs, y = pMisseg)) +
         axis.text.y = element_text(size = 15),
         axis.title = element_text(size = 15),
         aspect.ratio = 1, panel.grid = element_blank())
-ggsave("plots/figure_3C/fig_3c.pdf")
+ggsave(file.path(plots_dir_path, "fig_3c.pdf"))
 
 # we then create all the other relevant plots for this section of Figure 3, specifically 3D
 # as they're based on the results of this simulation
 # For figure 3D1:
-optimal_params_sim <- readRDS(file.path("results/T_ALL_params_3C", best_sim))
-saveRDS(optimal_params_sim, "/scratch/p319788/CINsim/best_sims/full.Rds")
+optimal_params_sim <- readRDS(file.path(results_dir_path, sim_name))
+saveRDS(optimal_params_sim, "/scratch/p319788/CINsim/best_sims/full_T_ALL.Rds")
 
 # uses the build-in plot_cn function from CINsim to get our initial plot
 p <- plot_cn(optimal_params_sim) 
@@ -197,7 +224,7 @@ p + theme(axis.text.x = element_text(size = 15),
         plot.subtitle = element_text(hjust = 0.5, size = 14)) +
     labs(title = "Copy number frequency", subtitle = "(optimal Division FC and p_misseg)") +
     scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_3C/fig_3d1.pdf", plot = p)
+ggsave(file.path(plots_dir_path, "fig_3d1.pdf"), plot = p)
 
 # Figure 3C can be recreated by running the code below:
 # we keep randomly sampling simulations untill we find a viable one
@@ -224,4 +251,4 @@ p <- p + theme(axis.text.x = element_text(size = 15),
           plot.subtitle = element_text(hjust = 0.5, size = 14)) +
   labs(title = "Karyotype landscape", subtitle = "(optimal Division FC and p_misseg, survival FC = 1.36)") +
   scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-ggsave("plots/figure_3C/fig_3d2.pdf", plot = p)
+ggsave(file.path(plots_dir_path, "fig_3d2.pdf"), plot = p)
