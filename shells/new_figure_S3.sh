@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#SBATCH --job-name=n_generations_heatmap
-#SBATCH --time=02:00:00
+#SBATCH --job-name=new_Fig_S3
+#SBATCH --time=00:05:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=16GB
-#SBATCH --error=errors/n_generations_heatmap.err
-#SBATCH --output=outputs/n_generations_heatmap.log
+#SBATCH --error=errors/new_Fig_S3.err
+#SBATCH --output=outputs/new_Fig_S3.log
 
 ######
 # CHANGE THE NAME OF THE JOB TO THE SCRIPT NAME - OTHERWISE A LOT OF THINGS BREAK
@@ -25,8 +25,8 @@ module purge
 module load R/4.4.1-gfbf-2023b
 
 # run your script
-Rscript $TMPDIR/scripts/n_generations_heatmap.R
+Rscript $TMPDIR/scripts/new_figure_S3.R
 
 # copies all relevant results to SCRATCH
-mkdir -p $SCRATCH/CINsim/n_generations_heatmap
-cp $TMPDIR $SCRATCH/CINsim/n_generations_heatmap -r
+mkdir -p $SCRATCH/CINsim/new_Fig_S3
+cp $TMPDIR $SCRATCH/CINsim/new_Fig_S3 -r

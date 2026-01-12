@@ -88,6 +88,13 @@ df_summary <- best_CnFS %>%
     se_CnFS = sd_CnFS / sqrt(n)
   )
 
+print(df_summary)
+
+df_summary$organoid <- factor(
+  df_summary$organoid,
+  levels = c("9T", "14T", "16T", "24TB")
+)
+
 # plot low limit
 p1 <- ggplot(df_summary, aes(x = organoid, y = mean_CnFS, fill = sim_type)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +

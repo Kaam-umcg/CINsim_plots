@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=single_sweep_T_ALL
-#SBATCH --time=4-12:00
+#SBATCH --time=5-00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
@@ -30,8 +30,8 @@ surv_FC="$1"
 export surv_FC
 
 # run your script
-Rscript "$TMPDIR"/scripts/single_sweep_T_ALL.R
+Rscript "$TMPDIR"/scripts/single_sweep_T302_p3.R
 
 # copies all relevant results to SCRATCH
-mkdir -p "$SCRATCH"/CINsim/single_sweep_T_ALL/"$surv_FC"
-cp "$TMPDIR" "$SCRATCH"/CINsim/single_sweep_T_ALL/"$surv_FC" -r
+mkdir -p "$SCRATCH"/CINsim/single_sweep_T302_p3/"$surv_FC"
+cp "$TMPDIR" "$SCRATCH"/CINsim/single_sweep_T302_p3/"$surv_FC" -r

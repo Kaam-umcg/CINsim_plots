@@ -31,6 +31,12 @@ recalc_CnFS <- function(CnFS_score){
   return(new_CnFS)
 }
 
+scale_lims <- list(
+        "9T" = c(0, 0.75), 
+        "14T" = c(0, 1), 
+        "16T" = c(0, 0.32), 
+        "24TB" = c(0, 0.20))
+
 # loops through all our relevant variables
 for(load_path in c(DIPLOID_PATH, WGD_PATH)){
         if (grepl("WGD", load_path)){
@@ -45,6 +51,8 @@ for(load_path in c(DIPLOID_PATH, WGD_PATH)){
                 sim_data <- readRDS(file.path(BASE_DATA_PATH, load_path, paste0(organoid, ".Rds")))
                 sim_data$division_FC <- factor(sim_data$division_FC)
 
+                max_CnFS <- max(recalc_CnFS(sim_data$CnFS))
+                print(max_CnFS)
                 # we need to make plots per survival FC
                 for (surv_FC in unique(sim_data$survival_FC)){
                         plot_data <- sim_data[sim_data$survival_FC == surv_FC,]
@@ -53,7 +61,7 @@ for(load_path in c(DIPLOID_PATH, WGD_PATH)){
 
                         p1 <- ggplot(plot_data, aes(x = division_FC, y = p_misseg)) +
                                 geom_tile(aes(fill = CnFS), color = "white", lwd = 0.2, linetype = 1) +
-                                scale_fill_gradient(low = "blue", high = "yellow", name = "CnFS", limits = c(0, 1)) +
+                                scale_fill_gradient(low = "blue", high = "yellow", name = "CnFS", limits = scale_lims[[organoid]]) +
                                 scale_y_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)), 
                                         breaks = 10^(-6:-1)) +
                                 scale_x_discrete(name = "Division FC", breaks = c(10, 5, 3.33, 2.5, 2, 1.67, 1.43, 1.25, 1.11),

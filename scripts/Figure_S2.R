@@ -390,6 +390,15 @@ plotting_frame$sim_id <- factor(plotting_frame$sim_id)
 # we clean those values here if they occurred with the baseline value
 plotting_frame[plotting_frame$KMS == Inf, "KMS"] <- BASELINE_KMS
 
+# recalc the CnFS to the new bounded limits
+recalc_CnFS <- function(CnFS_score){
+  old_denominator <- 1 / CnFS_score
+  new_CnFS <- 1 / (old_denominator + 1)
+  return(new_CnFS)
+}
+
+plotting_frame$CnFS <- recalc_CnFS(plotting_frame$CnFS)
+
 # KMS progression plot
 p1 <- ggplot(plotting_frame, aes(x = g, y = KMS, color = sim_id, 
                                  linetype = selection,

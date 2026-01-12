@@ -40,16 +40,7 @@ names(copy_num_cols) <- c("0", "1", "2", "3", "4", "5", "6", "7", "8")
 # this makes future reruns reproducible!
 set.seed(42)
 
-sim_df <- readRDS("/scratch/p319788/CINsim/Figure_3C/tmp/results/sim_div_3C.Rds")
-
-recalc_CnFS <- function(CnFS_score){
-  old_denominator <- 1 / CnFS_score
-  new_CnFS <- 1 / (old_denominator + 1)
-  return(new_CnFS)
-}
-
-# recalculates the CnFS to be bounded between 0-1
-sim_df$CnFS <- recalc_CnFS(sim_df$CnFS)
+sim_df <- readRDS("/scratch/p319788/CINsim/single_sweep_T_ALL/1.11/tmp/results/single_sweep_T_ALL_/full_sweep_T_ALL_results.Rds")
 
 # convert some vars to factor for the heatmap
 sim_df$division_FCs <- round(sim_df$division_FCs, 2)
@@ -60,12 +51,12 @@ p_lab <- bquote(italic(p)[misseg])
 
 # gets the location of highest CnFS
 red_star <- sim_df %>%
-  filter(CnFS == max(CnFS)) %>%
+  filter(new_CnFS == max(new_CnFS)) %>%
   select(division_FCs, pMisseg)
 
 # plotting the heatmap of p_misseg, div_FC, viability and CnFS
 ggplot(sim_df, aes(x = division_FCs, y = pMisseg)) +
-  geom_tile(aes(fill = CnFS, alpha = viability), color = "white", lwd = 0.2, linetype = 1) +
+  geom_tile(aes(fill = new_CnFS, alpha = viability), color = "white", lwd = 0.2, linetype = 1) +
   scale_fill_gradient(low = "blue", high = "yellow", name = "CnFS") +
   scale_alpha_continuous(range = c(0.1, 1), name = "Viability") +
   scale_y_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)),

@@ -9,7 +9,8 @@ library(dplyr)
 # recommend it for anyone else following in my footsteps.
 # Since this script runs a lot of simulations, it's made for HPC using slurm.
 setwd(Sys.getenv("TMPDIR"))
-BASE_DATA_PATH = Sys.getenv("DATA_SOURCE")
+BASE_DATA_PATH <- "/scratch/p319788/CINsim/Figure_2_backup/tmp/results/T_ALL_params"
+
 
 if (!dir.exists("plots/n_generations")){
   dir.create("plots/n_generations", recursive = TRUE)
