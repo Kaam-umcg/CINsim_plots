@@ -1,0 +1,5 @@
+*.err
+*.log
+benchmark/results
+archive
+shells/archive/*
