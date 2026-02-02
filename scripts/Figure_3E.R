@@ -52,6 +52,13 @@ names(best_sims) <- c("Survival", "Division", "Full")
 # cleans up some memory space - can this be done now that best_sims exists?
 rm(optimal_sims_surv, optimal_sims_div, optimal_sims_full)
 
+  # recalc the CnFS to the new bounded limits
+recalc_CnFS <- function(CnFS_score){
+  old_denominator <- 1 / CnFS_score
+  new_CnFS <- 1 / (old_denominator + 1)
+  return(new_CnFS)
+}
+
 # loops over the conditions and fills in their plotting info
 # this could be the gnarliest map() statement if properly functioned out
 for (condition in names(best_sims)){
@@ -67,6 +74,10 @@ for (condition in names(best_sims)){
   # calc the CnFS for each individual sim within the list of sims
   #TODO get the error (SEM) for this as well, need to know whether to ignore non-viable
   CnFS <- unlist(lapply(sims, get_CnFS))
+
+  # recalculate to the 0-1 bounds
+  CnFS <- recalc_CnFS(CnFS)
+
   row$CnFS <- mean(CnFS)
   row$CnFS_error <- sd(CnFS) / sqrt(length(CnFS))
 
@@ -117,8 +128,6 @@ p1 <- ggplot(df_3cond, aes(x = sim_type, y = CnFS, fill = sim_type)) +
 ggsave("plots/figure_3E/fig_3e.pdf", plot = p1)
 
 # updating plot p1
-
-
 p2 <- ggplot(df_3cond, aes(x = sim_type, y = generations, fill = sim_type)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7, color = "black", show.legend = FALSE) +
   geom_errorbar(aes(ymin = generations - generations_error, ymax = generations + generations_error),
