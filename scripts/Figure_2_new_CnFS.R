@@ -85,3 +85,54 @@ ggplot(sim_df, aes(x = survival_FCs, y = pMisseg)) +
         plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5))
 ggsave("plots/figure_2/figure_2b.pdf")
+
+
+# Figure 2e can be recreated by running the code below:
+# function for extracting the aneu/het scores from a karyosim object
+get_karyoscores <- function(karyo_sim){
+  last_g <- max(karyo_sim$gen_measures$g)
+  last_g_measures <- karyo_sim$pop_measures[karyo_sim$pop_measures$g == last_g, ]$measures[[1]]
+  
+  # we need to strip the X chromosome from the calculation
+  last_g_measures <- last_g_measures[last_g_measures$chromosome != "X", ]
+  
+  # returns the relevant values
+  aneu_score <- mean(last_g_measures$aneuploidy)
+  het_score <- mean(last_g_measures$heterogeneity)
+  
+  return(c(aneu_score, het_score))
+}
+
+optimal_params_sim <- readRDS("/scratch/p319788/CINsim/best_sims/survival.Rds")
+
+# gets the het/aneu scores from all optimal param simulations
+pop_scores <- map(optimal_params_sim, get_karyoscores)
+
+# and uses whacky R indexing to get the specific scores per type
+pop_scores <- unlist(pop_scores)
+sim_aneu_scores <- pop_scores[c(TRUE, FALSE)]
+sim_het_scores <- pop_scores[c(FALSE, TRUE)]
+
+# also does a wilcox test so we can include the p-values
+x_aneuploidy <- sim_aneu_scores
+x_heterogeneity <- sim_het_scores
+
+y_aneuploidy <- CINsim::karyotype_measures[CINsim::karyotype_measures$parameter == "aneuploidy", ]$score
+y_heterogeneity <- CINsim::karyotype_measures[CINsim::karyotype_measures$parameter == "heterogeneity", ]$score
+
+wilcox_aneu <- wilcox.test(x_aneuploidy, y_aneuploidy, alternative = "two.sided", paired = FALSE)
+wilcox_het <- wilcox.test(x_heterogeneity, y_heterogeneity, alternative = "two.sided", paired = FALSE)
+
+print("Aneuploidy means")
+print(mean(x_aneuploidy))
+print(mean(y_aneuploidy))
+
+print("Heterogeneity means")
+print(mean(x_heterogeneity))
+print(mean(y_heterogeneity))
+
+print("Wilcox test of aneuploidy:")
+print(wilcox_aneu)
+
+print("Wilcox test of heterogeneity")
+print(wilcox_het)
