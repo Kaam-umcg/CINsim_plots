@@ -4,6 +4,8 @@
 # background. To address this issue, we need to make a H0-model, or an 
 # expected value distribution for the CnFS to take that we can compare
 # the acquired value against.
+rm(list = ls())
+
 library(CINsim)
 `%>%` <- magrittr::`%>%`
 scratch_dir <- Sys.getenv("SCRATCH")
@@ -134,6 +136,7 @@ for (sim_to_shuffle_name in names(sims_to_shuffle)){
         linewidth = 0.5,
         colour = "red") +
     ggplot2::ylim(c(0, 1)) +
+    ggplot2::xlim(c(0, 1)) + 
     ggplot2::scale_colour_manual(
         name = "Data type",
         values = c(
@@ -155,5 +158,4 @@ for (sim_to_shuffle_name in names(sims_to_shuffle)){
     file.copy(from = plot_name,
                 to = "~",
                 overwrite = TRUE)
-
 }

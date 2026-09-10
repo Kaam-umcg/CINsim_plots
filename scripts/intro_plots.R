@@ -4,9 +4,13 @@ library(tidyverse)
 # sets wd to location of the script - this is dirty, and I do not 
 # recommend it for anyone else following in my footsteps.
 setwd(Sys.getenv("TMPDIR"))
+plot_dir <- file.path(
+  Sys.getenv("TMPDIR"),
+  "plots"
+)
 
-if (!dir.exists("plots/figure_1")){
-  dir.create("plots/figure_1", recursive = TRUE)
+if (!dir.exists(plot_dir)){
+  dir.create(plot_dir, recursive = TRUE)
 }
 
 # plotting theme
@@ -59,7 +63,7 @@ growth_df <- map_df(r, function(x) {
   mutate(r = factor(r))
 
 # plot the population size over time
-growth_df %>%
+p1 <- growth_df %>%
   ggplot(aes(x = g, y = size)) +
   geom_hline(yintercept = c(M/5, M), col = "grey", linetype = 2) +
   geom_line(aes(group = r, col = r), linewidth = 1) +
@@ -69,11 +73,18 @@ growth_df %>%
   facet_wrap(~method) +
   labs(x = "Generation", y = "Population size") +
   cinsim_theme()
-ggsave(file = "plots/figure_1/figure_1d.pdf")
+
+ggsave(  
+  file = file.path(
+    plot_dir, 
+    "growth_curves.pdf"
+  ),
+  plot = p1
+)
 
 # Figure 1e can be reproduced using the code below:
 # plot the maximum number of generations before 99.9% of M is reached
-growth_df %>%
+p2 <- growth_df %>%
   filter(size <= 0.999*M) %>%
   group_by(r, method) %>%
   summarize(g = max(g),
@@ -88,4 +99,11 @@ growth_df %>%
   labs(x = "R", y = "Generations", fill = "Method",
        title = "Generations to 99.9% of M") +
   cinsim_theme()
-ggsave(file = "plots/figure_1/figure_1e.pdf")
+
+ggsave(  
+  file = file.path(
+    plot_dir, 
+    "generation_carry_capacity.pdf"
+  ),
+  plot = p2
+)

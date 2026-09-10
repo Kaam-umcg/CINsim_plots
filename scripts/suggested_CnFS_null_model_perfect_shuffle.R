@@ -4,6 +4,8 @@
 # background. To address this issue, we need to make a H0-model, or an 
 # expected value distribution for the CnFS to take that we can compare
 # the acquired value against.
+rm(list = ls())
+
 library(CINsim)
 `%>%` <- magrittr::`%>%`
 scratch_dir <- Sys.getenv("SCRATCH")
@@ -96,5 +98,125 @@ generate_cell_population <- function(frac_mat, n_cells, cn_states = NULL, seed =
   return(out_mat)
 }
 
-# we now have functions that can create a perfectly matching cell population, but we need to do
-# some permutation to spread the distribution.
+swap_two_in_row <- function(row) {
+  # row: numeric (or character) vector representing one row of a matrix
+  
+  n_cols <- base::length(row)
+  
+  # If fewer than 2 columns, nothing to swap
+  if (n_cols < 2) {
+    return(row)
+  }
+  
+  # Randomly choose two distinct positions
+  idx <- base::sample.int(n_cols, size = 2, replace = FALSE)
+  
+  # Swap values at these positions
+  tmp <- row[idx[1]]
+  row[idx[1]] <- row[idx[2]]
+  row[idx[2]] <- tmp
+  
+  return(row)
+}
+
+get_CnFS_shuffled_perfect_pop <- function(sim, n_cells = 1000, n_perms = NULL){
+  selection_metric <- sim$selection_metric
+  permutated_karyos <- generate_cell_population(
+    frac_mat = selection_metric,
+    n_cells = n_cells,
+    cn_states = NULL,
+    seed = NULL)
+  n_perms <- stats::rnbinom(
+    n = 1, 
+    mu = 2,
+    size = 5)
+
+  # now we want to permutate CNs a little bit
+  #TODO - we might want some extra shuffling here?
+  # could do multiple calls,
+  while (n_perms > 0){
+    permutated_karyos <- apply(
+        X = permutated_karyos,
+        MARGIN = 1, 
+        FUN = swap_two_in_row)
+
+    # apply flips dimensions so we transpose them back  
+    permutated_karyos <- t(permutated_karyos)
+    n_perms <- n_perms - 1
+  }
+
+  shuffled_CnFS <- calc_CnFS(
+    karyotypes = permutated_karyos,
+    selection_metric = selection_metric)
+
+  return(shuffled_CnFS)
+}
+
+# we now have functions that can create a perfectly matching cell population, 
+# but we need to do some permutation to spread the distribution.
+# Doing that in a loop for every set of simulations
+for (sim_to_shuffle_name in names(sims_to_shuffle)){
+  sim_to_shuffle <- readRDS(sims_to_shuffle[sim_to_shuffle_name])
+
+  CnFS_of_sims <- unlist(lapply(sim_to_shuffle, FUN = function(sim){
+      CnFS <- calc_CnFS(
+          karyotypes = sim$karyotypes,
+          selection_metric = sim$selection_metric)
+      return(CnFS)
+  }))
+
+  mean_sim_CnFS <- mean(CnFS_of_sims)
+  sim_CnFS <- data.frame(CnFS_of_sims)
+  colnames(sim_CnFS) <- "value"
+
+  permutated_CnFS <- lapply(
+    X = sim_to_shuffle,
+    FUN = get_CnFS_shuffled_perfect_pop)
+
+  # now we want to make the distribution plot for the real CnFS and the permutated ones
+  CnFS_combined <- purrr::map_df(
+    permutated_CnFS,
+    .f = function(x) {
+        df <- data.frame(value = x)
+        return(df)},
+    .id = "source")
+
+  p1 <- ggplot2::ggplot(CnFS_combined, ggplot2::aes(x = value)) +
+    ggplot2::geom_density(
+        mapping = ggplot2::aes(y = ggplot2::after_stat(density / max(density)), colour = "Permutated"),
+        alpha = 0.5,
+        fill = "lightblue",
+        data = CnFS_combined) +
+    ggplot2::geom_density(
+        mapping = ggplot2::aes(y = ggplot2::after_stat(density / max(density)), colour = "Normal"),
+        alpha = 0.2,
+        fill = "red",
+        data = sim_CnFS) +
+    ggplot2::geom_vline(
+        xintercept = mean_sim_CnFS,
+        linetype = "dashed",
+        linewidth = 0.5,
+        colour = "red") +
+    ggplot2::ylim(c(0, 1)) +
+    ggplot2::xlim(c(0, 1)) +
+    ggplot2::scale_colour_manual(
+        name = "Data type",
+        values = c(
+            "Permutated" = "lightblue",
+            "Normal" = "red"
+        )
+    ) +
+    ggplot2::labs(
+        x = "CnFS value of simulation",
+        y = "Scaled density",
+        title = glue::glue("Shuffled perfect karyotype CnFS against real CnFS for {sim_to_shuffle_name}")) +
+    CINsim:::cinsim_theme()
+
+  plot_name <- file.path(plot_dir, glue::glue("permuted_perfect_CnFS_density_", sim_to_shuffle_name,".png"))
+
+  ggplot2::ggsave(filename = plot_name,
+                  plot = p1)
+  file.copy(from = plot_name,
+            to = "~",
+            overwrite = TRUE)
+}

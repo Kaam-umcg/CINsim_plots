@@ -4,6 +4,8 @@
 # background. To address this issue, we need to make a H0-model, or an 
 # expected value distribution for the CnFS to take that we can compare
 # the acquired value against.
+rm(list = ls())
+
 library(CINsim)
 `%>%` <- magrittr::`%>%`
 scratch_dir <- Sys.getenv("SCRATCH")
@@ -62,10 +64,9 @@ permute_simulation <- function(sim, permutations = 5){
     return(permuted_CnFS)
 }
 
-sims_to_shuffle_mouse <- list.files(
+sims_to_shuffle <- list.files(
     path = "/scratch/p319788/CINsim/best_sims",
     full.names = TRUE)
-# sims_to_shuffle_organoids <- 
 
 names(sims_to_shuffle) <- tools::file_path_sans_ext(basename(sims_to_shuffle))
 
@@ -115,6 +116,7 @@ for (sim_to_shuffle_name in names(sims_to_shuffle)){
         linewidth = 0.5,
         colour = "red") +
     ggplot2::ylim(c(0, 1)) +
+    ggplot2::xlim(c(0, 1)) +
     ggplot2::scale_colour_manual(
         name = "Data type",
         values = c(
@@ -124,7 +126,8 @@ for (sim_to_shuffle_name in names(sims_to_shuffle)){
     ) +
     ggplot2::labs(
         x = "CnFS value of simulation",
-        y = "Scaled density") +
+        y = "Scaled density",
+        title = glue::glue("Shuffled karyotype CnFS against real CnFS for {sim_to_shuffle_name}")) +
     CINsim:::cinsim_theme()
 
     plot_name <- file.path(plot_dir, glue::glue("permuted_CnFS_density_", sim_to_shuffle_name,".png"))

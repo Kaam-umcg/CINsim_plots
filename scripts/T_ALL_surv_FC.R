@@ -23,6 +23,8 @@ if (!dir.exists("results/T_ALL_params")){
 ITERATIONS <- 100
 GENERATIONS <- 100
 MAX_CELLS <- 2e9
+CORES_AVAIL <- as.numeric(Sys.getenv("SLURM_CORES_PER_TASK"))
+print(glue::glue("CORES_AVAIL is {CORES_AVAIL}"))
 
 # source some utils functions for CnFS and viability
 source("scripts/utils/CnFS.R")
@@ -117,7 +119,7 @@ for (i in 1:nrow(sim_df)){
   # runs the simulations for 1 entry in the heatmap. We only vary
   # the pSurvival, as pMisseg is iterated in the loop.
   sim_list <- parallelCinsim(iterations = ITERATIONS,                   
-                   cores = 10,
+                   cores = CORES_AVAIL,
                    karyotypes = NULL,
                    euploid_ref = 2,
                    g = GENERATIONS,
@@ -128,6 +130,8 @@ for (i in 1:nrow(sim_df)){
                    coef = survival_FCs[[idx_surv_FC]],
                    CnFS = TRUE,
                    KMS = FALSE,
+                   monosomy_penalty = TRUE,
+                   penalty_fraction = 0.1,
                    collect_fitness_score = TRUE)
   
   # viability of the combination of p_misseg and survival_FC is defined
