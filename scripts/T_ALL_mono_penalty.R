@@ -20,8 +20,6 @@ output_dir <- file.path(
   TMP_DIR,
   "results"
 )
-
-#TODO continue updating paths properly
 sim_dir <- file.path(
   output_dir,
   "sims"
@@ -84,6 +82,7 @@ p1 <- ggplot(melt_Mps1, aes(x = Chromosome, y = Fraction,
         axis.title = element_text(size = 15), aspect.ratio = 1,
         plot.title = element_text(hjust = 0.5),
         plot.subtitle = element_text(hjust = 0.5))
+
 ggplot2::ggsave(
   file = file.path(
     plot_dir,
@@ -127,8 +126,7 @@ sim_df <- data.frame(
 # I am unsure how foreach works with code that uses snow,
 # so I opt for doing the simulations by row.
 # this also allows me to save the intermediary result sometimes
-# which is recommended for such a chunky piece of code.
-# not very R standard, but such is life (sorry!)
+# which is best for such a chunky piece of code.
 for (i in 1:nrow(sim_df)){
   row <- sim_df[i,]
 
@@ -152,13 +150,13 @@ for (i in 1:nrow(sim_df)){
                    coef = survival_FCs[[idx_surv_FC]],
                    CnFS = TRUE,
                    KMS = FALSE,
-                   monosomy_penalty = FALSE,
-                   penalty_fraction = 0,
+                   monosomy_penalty = TRUE,
+                   penalty_fraction = 0.1,
                    collect_fitness_score = TRUE)
   
   # viability of the combination of p_misseg and survival_FC is defined
   # as the amount of simulations that get above the MAX_CELLS threshold or reach GENERATIONS generations
-  surviving_sims <- unlist(map(1:ITERATIONS, ~ check_viability(sim_list, .x, 
+  surviving_sims <- unlist(map(1:ITERATIONS, ~ CINsim::check_viability(sim_list, .x, 
                                                 threshold_value = MAX_CELLS, max_g = GENERATIONS)))
   row$viability <- sum(surviving_sims)/ ITERATIONS
   row$viable_sims <- sum(surviving_sims)
@@ -166,7 +164,7 @@ for (i in 1:nrow(sim_df)){
   # the matching score of the combination of p_misseg and survival_FC is defined
   # as the mean CnFS (Copy number Frequency Score) over all the viable sims +
   # 0 for all non-viable sims
-  CnFS <- unlist(lapply(sim_list[surviving_sims], get_final_CnFS))
+  CnFS <- unlist(lapply(sim_list[surviving_sims], CINsim::get_final_CnFS))
   row$non_zero_CnFS <- mean(CnFS)
 
   row$CnFS <- mean(append(CnFS, rep(0, sum(!surviving_sims))))
@@ -175,12 +173,11 @@ for (i in 1:nrow(sim_df)){
   sim_name <- paste0("misseg_", round(row$pMisseg, 7),
                      "_surv_FC_", round(row$survival_FCs, 2), ".Rds")
   saveRDS(
-    object = sim_list, 
-    file = file.path(
-      sim_dir, 
+    sim_list,
+    file.path(
+      sim_dir,
       sim_name
-    )
-  )
+      ))
   
   # updates the best scoring simulation
   if (row$CnFS > highest_CnFS){
@@ -189,7 +186,6 @@ for (i in 1:nrow(sim_df)){
   }
   # finally, writes the relevant data to out plotting object
   sim_df[i, ] <- row
-  break
 }
 
 # saving the metrics of the simulations for later use (if needed)
@@ -218,8 +214,8 @@ p2 <- ggplot(sim_df, aes(x = survival_FCs, y = pMisseg)) +
   scale_fill_gradient(low = "blue", high = "yellow", name = "CnFS") +
   scale_alpha_continuous(range = c(0.1, 1), name = "Viability") +
   scale_y_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)),
-                breaks = 10^(-6:-1)) +
-  scale_x_discrete(name = "Survival FC", breaks = c(10, 5, 3.33, 2.5, 2, 1.67, 1.43, 1.25, 1.11),
+                breaks = 10^(-4:-1)) +
+  scale_x_discrete(name = "Survival FC", breaks = c(2.5, 2, 1.67, 1.43, 1.25, 1.11),
                    limits = unique(sim_df$survival_FCs)) +
   geom_point(data = red_star, aes(x = survival_FCs, y = pMisseg), color = "red",
              size = 3, shape = 4) +  
@@ -251,7 +247,6 @@ optimal_params_sim <- readRDS(
     best_sim))
 
 # TODO: hardcoded filepath for saving the best sim for Fig 2C
-# this should be changed - tell Alex van Kaam if you run into an issue here and don't know how to solve yourself!
 saveRDS(
   object = optimal_params_sim,
   file = file.path(
@@ -307,7 +302,6 @@ p4 <- p4 + theme(axis.text.x = element_text(size = 15),
           plot.subtitle = element_text(hjust = 0.5, size = 14)) +
   labs(title = "Karyotype landscape", subtitle = "(optimal p_misseg)") +
   scale_x_discrete(guide = guide_axis(check.overlap = TRUE, n.dodge = 2))
-
 ggplot2::ggsave(
   plot = p4,
   file = file.path(
@@ -315,7 +309,6 @@ ggplot2::ggsave(
     "sample_karyotypes.pdf"
   )
 )
-
 
 # Figure 2e can be recreated by running the code below:
 # function for extracting the aneu/het scores from a karyosim object
