@@ -39,6 +39,9 @@ if (!dir.exists(sim_dir)){
 }
 
 CORES_AVAIL <- as.integer(Sys.getenv("SLURM_CPUS_PER_TASK"))
+ITERATIONS <- 100
+GENERATIONS <- 250
+MAX_CELLS <- 5e10
 
 # plotting theme and scale colours for copy numbers
 # copy number colors

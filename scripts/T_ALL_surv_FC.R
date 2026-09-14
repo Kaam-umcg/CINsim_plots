@@ -189,7 +189,6 @@ for (i in 1:nrow(sim_df)){
   }
   # finally, writes the relevant data to out plotting object
   sim_df[i, ] <- row
-  break
 }
 
 # saving the metrics of the simulations for later use (if needed)

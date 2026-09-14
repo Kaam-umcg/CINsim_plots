@@ -22,7 +22,9 @@ plot_dir <- file.path(
   "plots"
 )
 
-dir.create(plot_dir)
+dir.create(
+  plot_dir,
+  recursive = TRUE)
 
 output_dir <- file.path(
   TMP_DIR,
@@ -35,7 +37,10 @@ sim_dir <- file.path(
   "sims"
 )
 
-dir.create(sim_dir, showWarnings = FALSE)
+dir.create(
+  sim_dir, 
+  showWarnings = FALSE,
+  recursive = TRUE)
 
 # sets seed for reproducibility
 set.seed(42)
@@ -153,7 +158,7 @@ for (organoid_name in names(organoid_cns)){
 
     # prints some summary statistics for checking in the logs
     cat("final_CnFS per simulation values of: \n")
-    print(final_CnFS)
+    print(CnFS)
 
     # resets the row back into the main dataframe
     sim_data_frame[i, ] <- row

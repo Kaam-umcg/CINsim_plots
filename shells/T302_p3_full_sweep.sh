@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#SBATCH --job-name=full_sweep_T302_p3
+#SBATCH --job-name=T302_p3_full_sweep
 #SBATCH --time=00:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=4GB
-#SBATCH --error=errors/full_sweep_T302_p3.err
-#SBATCH --output=outputs/full_sweep_T302_p3.log
+#SBATCH --error=errors/T302_p3_full_sweep.err
+#SBATCH --output=outputs/T302_p3_full_sweep.log
 
 ######
 # CHANGE THE NAME OF THE JOB TO THE SCRIPT NAME - OTHERWISE A LOT OF THINGS BREAK
