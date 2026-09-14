@@ -253,7 +253,7 @@ saveRDS(
     Sys.getenv("SCRATCH"),
     "CINsim",
     "best_sims",
-    "surv_FC.Rds"
+    "surv_FC_mono_penalty.Rds"
   )
 )
 

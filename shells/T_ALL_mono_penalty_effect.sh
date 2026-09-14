@@ -1,19 +1,19 @@
 #!/bin/bash
 
-#SBATCH --job-name=T_ALL_pen_effect
+#SBATCH --job-name=T_ALL_mono_penalty_effect
 #SBATCH --time=00:10:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=8GB
-#SBATCH --error=errors/T_ALL_pen_effect.err
-#SBATCH --output=outputs/T_ALL_pen_effect.log
+#SBATCH --error=errors/T_ALL_mono_penalty_effect.err
+#SBATCH --output=outputs/T_ALL_mono_penalty_effect.log
 
 ######
 # MAKE SURE THIS IS THE CORRECT SCRIPT NAME
 ######
-SCRIPT_NAME="T_ALL_pen_effect"
+SCRIPT_NAME="T_ALL_mono_penalty_effect"
 ######
 # MAKE SURE THIS IS THE CORRECT SCRIPT NAME
 ######

@@ -1,9 +1,3 @@
-# testing a possible null-model for the CnFS metric.
-# main concern currently is that the CnFS metric represents an abstract
-# value without an expectated value, making it non-interpretable against
-# background. To address this issue, we need to make a H0-model, or an 
-# expected value distribution for the CnFS to take that we can compare
-# the acquired value against.
 rm(list = ls())
 
 library(CINsim)
@@ -59,41 +53,8 @@ create_modal_karyotype <- function(selection_metric, n = 1000, p_perm = 0.0001){
     return(permutated_karyos)
 }
 
-swap_two_in_row <- function(row) {
-  # row: numeric (or character) vector representing one row of a matrix
-  
-  n_cols <- base::length(row)
-  
-  # If fewer than 2 columns, nothing to swap
-  if (n_cols < 2) {
-    return(row)
-  }
-  
-  # Randomly choose two distinct positions
-  idx <- base::sample.int(n_cols, size = 2, replace = FALSE)
-  
-  # Swap values at these positions
-  tmp <- row[idx[1]]
-  row[idx[1]] <- row[idx[2]]
-  row[idx[2]] <- tmp
-  
-  return(row)
-}
 
-modal_shuffle_CnFS <- function(sim){
-    selection_metric <- sim$selection_metric
-    shuffled_modal_karyos <- create_modal_karyotype(
-        selection_metric = selection_metric,
-        n = 1000,
-        p_perm = 0.0001
-    )
-    CnFS <- calc_CnFS(
-        karyotypes = shuffled_modal_karyos,
-        selection_metric = selection_metric
-    )
-    return(CnFS)
-}
-
+#TODO make changes from here onwards
 for (sim_to_shuffle_name in names(sims_to_shuffle)){
     sim_to_shuffle <- readRDS(sims_to_shuffle[sim_to_shuffle_name])
     # recalculates the final CnFS of all simulations, since not all used the new CnFS mapping

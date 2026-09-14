@@ -58,7 +58,7 @@ for (organoid_name in names(organoid_cns)){
     organoid_cn <- organoid_cns[[organoid_name]]
 
     # gets all the required simulation parameters
-    p_missegs <- 10^seq(-6, -1, length.out = 10)
+    p_missegs <- 10^seq(-4, -1, length.out = 10)
     division_FCs <- make_cinsim_coeffcients(selection_metric = organoid_cn,
                                             euploid_copy = aneuploid_base,
                                             min_survival_euploid = 0.1,

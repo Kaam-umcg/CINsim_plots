@@ -22,7 +22,9 @@ do
     echo "Starting script for survival_FC of $surv_FC"  
 
     # passes the surv_FC in the sbatch call
-    sbatch --output="outputs/T302_p3_single_sweep_$surv_FC.log" --error="errors/T302_p3_single_sweep_$surv_FC.err" single_sweep_T302_p3.sh "$surv_FC"
+    sbatch --output="outputs/T302_p3_single_sweep_$surv_FC.log" \
+            --error="errors/T302_p3_single_sweep_$surv_FC.err" \
+            T302_p3_single_sweep.sh "$surv_FC"
 
     # sleep to cancel in case something goes wrong
     sleep 120

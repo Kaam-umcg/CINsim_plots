@@ -5,15 +5,25 @@ library(ggplot2)
 library(purrr)
 library(dplyr)
 
-setwd(Sys.getenv("TMPDIR"))
+TMP_DIR <- Sys.getenv("TMPDIR")
+setwd(TMP_DIR)
 
 # creates dir to store our figures in later
-if (!dir.exists("plots/figure_5")){
-  dir.create("plots/figure_5", recursive = TRUE)
+plot_dir <- file.path(
+  TMP_DIR,
+  "plots"
+)
+output_dir <- file.path(
+  TMP_DIR,
+  "results"
+)
+
+if (!dir.exists(plot_dir)){
+  dir.create(plot_dir, recursive = TRUE)
 }
 
-if (!dir.exists("results")){
-  dir.create("results", recursive = TRUE)
+if (!dir.exists(output_dir)){
+  dir.create(output_dir, recursive = TRUE)
 }
 
 # MAGIC NUMBERS
@@ -24,14 +34,21 @@ MAX_CELLS <- 5e10
 
 # and some names of organoids and locations of sim results
 ORGANOID_NAMES <- c("14T", "16T", "9T", "24TB")
+
 # the paths might be different for you if you're running this later!
-DIPLOID_RESULTS <- "/scratch/p319788/CINsim/Figure_S4a_diploid/tmp/results"
+DIPLOID_RESULTS <- file.path(
+  Sys.getenv("SCRATCH"),
+  "CINsim",
+  "organoid_sweeps",
+  
+)
 WGD_RESULTS <- "/scratch/p319788/CINsim/Figure_S4a_WGD/tmp/results"
 
 # we just want to generate plots if the simulation was viable, otherwise
 # we output a "non-viable" signal and put that in the paper. That is the best representation
 # of the data I can make where we're not just presenting artefacts as the real deal.
 # quiver before messed up path management - sorry if you're debugging this
+# - I am indeed debugging this and am still sorry
 plot_df <- data.frame(
   CnFS = NA, 
   sim_type = rep(c("diploid", "WGD"), times = length(ORGANOID_NAMES)),

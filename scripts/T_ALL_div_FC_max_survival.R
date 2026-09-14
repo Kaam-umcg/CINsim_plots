@@ -60,12 +60,12 @@ set.seed(42)
 # to determine the slope and intercept for a specific survival FC
 division_FCs <- make_cinsim_coeffcients(selection_metric = Mps1,
                                         euploid_copy = 2,
-                                        min_survival_euploid = 0.4, #  division_FC = 2.5
+                                        min_survival_euploid = 0.1, #  division_FC = 10
                                         max_survival_euploid =  0.9, # division_FC = 1.111.. 
                                         max_survival = 1,
-                                        interval = 0.5 / 24,         # takes 25 samples
+                                        interval = 0.8 / 24,         # takes 25 samples
                                         probability_types = c("pDivision"))
-division_FC_vals = (1 / seq(0.4, 0.9, 0.5 / 24))
+division_FC_vals = (1 / seq(0.1, 0.9, 0.8 / 24))
 # sets the names for easy indexing later
 names(division_FCs) <- division_FC_vals
 
@@ -193,7 +193,7 @@ p1 <- ggplot(sim_df, aes(x = division_FCs, y = pMisseg)) +
   scale_alpha_continuous(range = c(0.1, 1), name = "Viability") +
   scale_y_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)),
                 breaks = 10^(-4:-1)) +
-  scale_x_discrete(name = "Division FC", breaks = c(2.5, 2, 1.67, 1.43, 1.25, 1.11),
+  scale_x_discrete(name = "Division FC", breaks = c(10, 5, 3.33, 2.5, 2, 1.67, 1.43, 1.25, 1.11),
                    limits = unique(sim_df$division_FCs)) +
   geom_point(data = red_star, aes(x = division_FCs, y = pMisseg), color = "red",
              size = 3, shape = 4) +  
@@ -208,7 +208,7 @@ ggplot2::ggsave(
   plot = p1,
   file = file.path(
     plot_dir,
-    "CnFS_viability_heatmap.pdf"
+    "CnFS_viability_heatmap_div_max_survival.pdf"
   )
 )
 
@@ -226,7 +226,7 @@ saveRDS(
     Sys.getenv("SCRATCH"),
     "CINsim",
     "best_sims",
-    "div_FC_no_death.Rds"
+    "div_FC_max_survival.Rds"
   )
 )
 
@@ -246,7 +246,7 @@ ggplot2::ggsave(
   plot = p3,
   file = file.path(
     plot_dir, 
-    "karyotype_landscape.pdf"
+    "karyotype_landscape_div_max_survival.pdf"
   )
 )
 
@@ -280,6 +280,6 @@ ggplot2::ggsave(
   plot = p3,
   file = file.path(
     plot_dir, 
-    "sample_karyotypes.pdf"
+    "sample_karyotypes_div_max_survival.pdf"
   )
 )
