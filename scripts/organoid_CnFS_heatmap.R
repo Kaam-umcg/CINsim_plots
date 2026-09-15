@@ -29,10 +29,10 @@ ORGANOID_NAMES <- c("14T", "16T", "9T", "24TB")
 # we do this because the inter organoid comparisons are much more interesting than between for 
 # this context!
 scale_lims <- list(
-        "9T" = c(0, 2.5), 
-        "14T" = c(0, 240), 
-        "16T" = c(0, 0.5), 
-        "24TB" = c(0, 0.3))
+        "9T" = c(0, 1), 
+        "14T" = c(0, 1), 
+        "16T" = c(0, 1), 
+        "24TB" = c(0, 1))
 
 # loops through all our relevant variables
 for(load_path in c(DIPLOID_PATH, WGD_PATH)){
@@ -57,7 +57,7 @@ for(load_path in c(DIPLOID_PATH, WGD_PATH)){
                                 geom_tile(aes(fill = CnFS), color = "white", lwd = 0.2, linetype = 1) +
                                 scale_fill_gradient(low = "blue", high = "yellow", name = "CnFS", limits = scale_lim) +
                                 scale_y_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)), 
-                                        breaks = 10^(-6:-1)) +
+                                        breaks = 10^(-4:-1)) +
                                 scale_x_discrete(name = "Division FC", breaks = c(10, 5, 3.33, 2.5, 2, 1.67, 1.43, 1.25, 1.11),
                                         limits = unique(plot_data$division_FCs)) +
                                 labs(x = "Division FC", y = "p misseg") +

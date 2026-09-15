@@ -42,6 +42,7 @@ DIPLOID_RESULTS <- file.path(
   "organoid_sweeps",
   
 )
+
 WGD_RESULTS <- "/scratch/p319788/CINsim/Figure_S4a_WGD/tmp/results"
 
 # we just want to generate plots if the simulation was viable, otherwise

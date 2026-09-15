@@ -44,11 +44,17 @@ optimal_sims_div <- readRDS(file.path(
   "div_FC_lim_survival.Rds"
 ))
 
+###########
 #TODO continue here
-optimal_sims_full <- readRDS(file.path(
-  best_sim_dir,
-  ""
+###########
+optimal_sims_full <- readRDS(
+  file.path(
+    best_sim_dir,
+    ""
 ))
+###########
+#TODO continue here
+###########
 
 # makes a data frame with all the required entries
 # might want to update this if we're also adding the monosomy penalty effect

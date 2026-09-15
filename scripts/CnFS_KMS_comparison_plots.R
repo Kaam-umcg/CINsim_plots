@@ -12,10 +12,25 @@ copy_num_cols <- c("gray90", "darkorchid3", "springgreen2", "red3", "gold2", "na
                    "lemonchiffon", "dodgerblue", "chartreuse4")
 names(copy_num_cols) <- c("0", "1", "2", "3", "4", "5", "6", "7", "8")
 
-setwd(Sys.getenv("TMPDIR"))
+TMP_DIR <- Sys.getenv("TMPDIR")
+setwd(TMP_DIR)
 
-if (!dir.exists("plots/figure_S2")){
-  dir.create("plots/figure_S2", recursive = TRUE)
+plot_dir <- file.path(
+    TMP_DIR,
+    "plots"
+)
+
+if (!dir.exists(plot_dir)){
+  dir.create(plot_dir, recursive = TRUE)
+}
+
+results_dir <- file.path(
+    TMP_DIR,
+    "results"
+)
+
+if (!dir.exists(results_dir)){
+  dir.create(results_dir, recursive = TRUE)
 }
 
 # some vars used in functions later
@@ -157,7 +172,7 @@ preferential_karyos_plots <- preferential_karyos %>%
 ############
 
 # reads Mps1 karyos from saved object
-Mps1_karyos_per_cell <- readRDS("data/chrom_counts_per_cell.Rds")
+Mps1_karyos_per_cell <- readRDS("~/CINsim_plots/data/chrom_counts_per_cell.Rds")
 
 # identifies the unique samples from the loaded object
 Mps1_names <- strsplit(as.character(Mps1_karyos_per_cell$sample), split = "_")
@@ -207,7 +222,7 @@ row_title[[3]] <- ggplot() +
            size = 6, angle = 0) + theme_void()
 
 # continues with making the patchwork for the first plot
-patch_p <- row_title[[1]] +
+patch_p1 <- row_title[[1]] +
   all_plots[[1]] + all_plots[[2]] + all_plots[[3]] + all_plots[[4]] + 
   all_plots[[5]] + all_plots[[6]] + all_plots[[7]] +
   row_title[[2]] + 
@@ -218,7 +233,14 @@ patch_p <- row_title[[1]] +
   all_plots[[19]] + all_plots[[20]] + all_plots[[21]] +
   plot_layout(ncol = 8, nrow = 3, width = c(2, rep(1, 7)),
                              guides = "collect", axes = "collect")
-ggsave("plots/figure_S2/fig_s2a.pdf", plot = patch_p)
+
+ggsave(
+  file.path(
+    plot_dir, 
+    "collected_karyos.pdf"
+  ),
+  plot = patch_p1
+)                             
 
 # Continues with plot S2b, which requires we do pairwise comparisons between
 # all the karyotypes
@@ -308,8 +330,21 @@ p2 <- pheatmap(dist_KMS,
                legend = TRUE)
 
 # patchwork doesn't work for this as these aren't ggplots, so we save to disk
-ggsave(filename = "plots/figure_S2/fig_s2b1.pdf", plot = p1)
-ggsave(filename = "plots/figure_S2/fig_s2b2.pdf", plot = p2)
+ggsave(
+  filename = file.path(
+    plot_dir, 
+    "dist_samples_CnFS.pdf"
+    ),
+  plot = p1
+)
+
+ggsave(
+  filename = file.path(
+    plot_dir, 
+    "dist_samples_KMS.pdf"
+    ),
+  plot = p2
+)
 
 # figure S2c
 # sets up the dataframe we'll use for plotting the figure later
@@ -390,17 +425,8 @@ plotting_frame$sim_id <- factor(plotting_frame$sim_id)
 # we clean those values here if they occurred with the baseline value
 plotting_frame[plotting_frame$KMS == Inf, "KMS"] <- BASELINE_KMS
 
-# recalc the CnFS to the new bounded limits
-recalc_CnFS <- function(CnFS_score){
-  old_denominator <- 1 / CnFS_score
-  new_CnFS <- 1 / (old_denominator + 1)
-  return(new_CnFS)
-}
-
-plotting_frame$CnFS <- recalc_CnFS(plotting_frame$CnFS)
-
 # KMS progression plot
-p1 <- ggplot(plotting_frame, aes(x = g, y = KMS, color = sim_id, 
+p3 <- ggplot(plotting_frame, aes(x = g, y = KMS, color = sim_id, 
                                  linetype = selection,
                                  group = interaction(sim_id, selection, iteration))) +
   geom_line(linewidth = 0.7) +
@@ -409,7 +435,7 @@ p1 <- ggplot(plotting_frame, aes(x = g, y = KMS, color = sim_id,
   labs(title = "KMS progression", x = "Generation (cycle)", y = "Score")
 
 # CnFS progression plot
-p2 <- ggplot(plotting_frame, aes(x = g, y = CnFS, color = sim_id, 
+p4 <- ggplot(plotting_frame, aes(x = g, y = CnFS, color = sim_id, 
                                  linetype = selection,
                                  group = interaction(sim_id, selection, iteration))) +
   geom_line(linewidth = 0.7) +
@@ -418,21 +444,31 @@ p2 <- ggplot(plotting_frame, aes(x = g, y = CnFS, color = sim_id,
   labs(title = "CnFS progression", x = "Generation (cycle)", y = "Score")
 
 # patchworks the CnFS and KMS plot together with some titles and other dressing
-patch_p <- p1 + p2 +
+patch_p2 <- p3 + p4 +
   plot_layout(ncol = 2, nrow = 1, guides = "collect", axes = "collect")
-ggsave("plots/figure_S2/fig_s2c.pdf", plot = patch_p, 
-       width = 14, height = 7, units = "in")
+ggsave(
+  filename = file.path(
+    plot_dir, 
+    "CnFS_KMS_progression_plot.pdf"
+  ),
+  plot = patch_p2
+)
 
 # and then the representative karyo plots for fig_s2d
-p1 <- cnvHeatmap(selection_sims[[highest_KMS_sim]])
-p1 <- p1 + 
+p4 <- cnvHeatmap(selection_sims[[highest_KMS_sim]])
+p4 <- p4 + 
   labs(title = paste0("Top KMS", " - Sim ", high_KMS_number))
-p2 <- cnvHeatmap(selection_sims[[highest_CnFS_sim]])
-p2 <- p2 + 
+p5 <- cnvHeatmap(selection_sims[[highest_CnFS_sim]])
+p5 <- p5 + 
   labs(title = paste0("Top CnFS", " - Sim ", high_CnFS_number))
 
-patch_p <- p1 + p2 +
+patch_p3 <- p4 + p5 +
   plot_layout(ncol = 2, nrow = 1, guides = "collect", axes = "collect")
-patch_p
-ggsave("plots/figure_S2/fig_s2d.pdf", plot = patch_p, 
-       width = 14, height = 7, units = "in")
+
+ggsave(
+  filename = file.path(
+    plot_dir, 
+    "CnFS_KMS_karyo_plots.pdf"
+  ),
+  plot = patch_p3
+)

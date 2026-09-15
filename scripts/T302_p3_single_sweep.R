@@ -16,7 +16,7 @@ print(wanted_survival_FC)
 plot_dir <- file.path(
   TMP_DIR,
   "plots",
-  paste0("single_sweep_T302_p3_", str(wanted_survival_FC))
+  paste0("single_sweep_T302_p3_", as.character(wanted_survival_FC))
 )
 
 if (!dir.exists(plot_dir)){
@@ -26,7 +26,7 @@ if (!dir.exists(plot_dir)){
 results_dir_path <- file.path(
   TMP_DIR,
   "results",
-  paste0("single_sweep_T302_p3_", str(wanted_survival_FC))
+  paste0("single_sweep_T302_p3_", as.character(wanted_survival_FC))
 )
 
 sim_dir <- file.path(
@@ -190,7 +190,7 @@ saveRDS(
     results_dir_path,
     paste0(
       "T302_p3_single_sweep_surv_FC_",
-      str(wanted_survival_FC),
+      as.character(wanted_survival_FC),
       "_sim_df.Rds")
     )
 )
@@ -231,7 +231,7 @@ ggplot2::ggsave(
     plot_dir,
     paste0(
       "CnFS_viability_heatmap_T302_p3_sweep_",
-      str(wanted_survival_FC),
+      as.character(wanted_survival_FC),
       ".pdf")
   )
 )
@@ -283,7 +283,7 @@ ggplot2::ggsave(
     plot_dir,
     paste0(
       "karyotype_landscape_T302_p3_sweep_",
-      str(wanted_survival_FC),
+      as.character(wanted_survival_FC),
       ".pdf")
     )
 )
@@ -316,7 +316,7 @@ ggplot2::ggsave(
     plot_dir,
     paste0(
       "sample_karyotypes_T302_p3_single_sweep_",
-      str(wanted_survival_FC),
+      as.character(wanted_survival_FC),
       ".pdf")
     )
 )

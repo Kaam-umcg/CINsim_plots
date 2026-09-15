@@ -3,7 +3,9 @@ library(ggplot2)
 library(dplyr)
 library(ggbreak)
 
-print(getwd())
+TMP_DIR <- Sys.getenv("TMPDIR")
+setwd(TMP_DIR)
+
 # constants for collating the data together
 ORGANOID_NAMES <- c("9T", "14T", "16T", "24TB")
 SIM_TYPES <- c("diploid", "WGD")
@@ -69,7 +71,7 @@ for (organoid in ORGANOID_NAMES){
 }
 
 
-# summarize your data by organoid and sim_type
+# summarize data by organoid and sim_type
 df_summary <- best_CnFS %>%
   group_by(organoid, sim_type) %>%
   summarise(

@@ -8,27 +8,54 @@ library(dplyr)
 # sets wd to location of the script - this is dirty, and I do not 
 # recommend it for anyone else following in my footsteps.
 # Since this script runs a lot of simulations, it's made for HPC using slurm.
-setwd(Sys.getenv("TMPDIR"))
-BASE_DATA_PATH <- "/scratch/p319788/CINsim/Figure_2_backup/tmp/results/T_ALL_params"
+TMP_DIR <- Sys.getenv("TMPDIR")
+setwd(TMP_DIR)
+
+# might need to update this proper
+BASE_DATA_PATH <- file.path(
+  Sys.getenv("SCRATCH"),
+  "CINsim",
+  ""
+)
+
+"/scratch/p319788/CINsim/Figure_2_backup/tmp/results/T_ALL_params"
+
+plot_dir <- file.path(
+    TMP_DIR,
+    "plots"
+)
+
+if (!dir.exists(plot_dir)){
+  dir.create(plot_dir, recursive = TRUE)
+}
+
+results_dir <- file.path(
+    TMP_DIR,
+    "results"
+)
+
+if (!dir.exists(results_dir)){
+  dir.create(results_dir, recursive = TRUE)
+}
+
+# could I not just load in earlier simulations rather than doing whatever this is?
+# that would in general be better as well, since the results would be much more
+# comparable to each other
+
+#' 1. list out all the relevant files (sim_df), & sims directory
+#' 2. Load the sims as listed in the sim_df and get the n_generations from them
+#' 3. Insert n_generations back into the dataframe
+#' 4. Make the relevant heatmap
 
 
-if (!dir.exists("plots/n_generations")){
-  dir.create("plots/n_generations", recursive = TRUE)
-}
-if (!dir.exists("results/n_generations")){
-  dir.create("results/n_generations", recursive = TRUE)
-}
+
+
 
 # MAGIC NUMBERS
 # sets variables for the simulations
 ITERATIONS <- 100
 GENERATIONS <- 100
 MAX_CELLS <- 2e9
-
-# source some utils functions for CnFS and viability
-source("scripts/utils/CnFS.R")
-source("scripts/utils/check_viability.R")
-source("scripts/utils/cinsim_theme.R")
 
 # plotting theme and scale colours for copy numbers
 # copy number colors
